@@ -1,0 +1,141 @@
+import React, { useState } from 'react';
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  StyleSheet,
+  Alert,
+  ScrollView,
+  KeyboardAvoidingView,
+  Platform,
+} from 'react-native';
+import { useRouter } from 'expo-router';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { sheetService } from '../lib/services';
+
+export default function ImportScreen() {
+  const [title, setTitle] = useState('');
+  const [artist, setArtist] = useState('');
+  const [key, setKey] = useState('');
+  const [body, setBody] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  
+  const router = useRouter();
+  const queryClient = useQueryClient();
+
+  const importMutation = useMutation({
+    mutationFn: (data: any) => sheetService.importSheet(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['sheets'] });
+      router.back();
+    },
+  });
+
+  const handleImport = async () => {
+    if (!body.trim()) {
+      Alert.alert('Error', 'Please enter the song content');
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      await importMutation.mutateAsync({
+        sourceType: 'text',
+        body: body.trim(),
+      });
+    } catch (error: any) {
+      Alert.alert('Import Failed', error.response?.data?.error || 'Unable to import sheet');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <KeyboardAvoidingView
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      style={styles.container}
+    >
+      <ScrollView style={styles.content}>
+        <Text style={styles.label}>Song Content *</Text>
+        <TextInput
+          style={styles.textArea}
+          placeholder="Paste your chord sheet here..."
+          value={body}
+          onChangeText={setBody}
+          multiline
+          numberOfLines={15}
+          textAlignVertical="top"
+        />
+
+        <Text style={styles.helpText}>
+          Paste text with chords above lyrics, or ChordPro format.{'\n'}
+          The formatter will automatically organize it.
+        </Text>
+
+        <TouchableOpacity
+          style={[styles.button, isLoading && styles.buttonDisabled]}
+          onPress={handleImport}
+          disabled={isLoading}
+        >
+          <Text style={styles.buttonText}>
+            {isLoading ? 'Importing...' : 'Import Sheet'}
+          </Text>
+        </TouchableOpacity>
+      </ScrollView>
+    </KeyboardAvoidingView>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#fff',
+  },
+  content: {
+    padding: 16,
+  },
+  label: {
+    fontSize: 16,
+    fontWeight: '600',
+    marginBottom: 8,
+  },
+  input: {
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 8,
+    padding: 12,
+    fontSize: 16,
+    marginBottom: 16,
+  },
+  textArea: {
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 8,
+    padding: 12,
+    fontSize: 14,
+    fontFamily: 'monospace',
+    minHeight: 300,
+    marginBottom: 8,
+  },
+  helpText: {
+    fontSize: 12,
+    color: '#666',
+    marginBottom: 24,
+    lineHeight: 18,
+  },
+  button: {
+    backgroundColor: '#007AFF',
+    borderRadius: 8,
+    padding: 16,
+    alignItems: 'center',
+  },
+  buttonDisabled: {
+    opacity: 0.6,
+  },
+  buttonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+});

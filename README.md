@@ -1,2 +1,270 @@
-# GigCentral
-Mobile app that allows musicians to manage and create chord sheets seamlessly 
+# StageReady
+
+StageReady is a cross-platform mobile application (iOS/Android) for musicians to organize chord sheets, build gig-ready setlists, perform without manual scrolling, **and discover gigs**. 
+
+**Phase 1 (Core Features)**: Chord sheet management and setlist organization  
+**Phase 2 (Gig Marketplace)**: Connect musicians with venues and event organizers
+
+## Features
+
+### Phase 1: ChordKeeper (Current)
+- **Chord Sheet Management**: Import, organize, and edit chord sheets
+- **Smart Formatting**: AI-powered ChordPro formatting with rules-engine fallback
+- **Setlist Organization**: Create directories and setlists for gigs
+- **Performance Mode**: Large, readable layouts with screen wake-lock
+- **Transpose & Capo**: Easy key changes and Nashville Numbers support
+- **Offline-First**: Full functionality without internet connection
+- **Cloud Sync**: Access your library across devices
+
+### Phase 2: Gig Marketplace (Planned - See [phase2_gig_marketplace.md](ai/phase2_gig_marketplace.md))
+- **Gig Discovery**: Browse and search local gig opportunities by location, genre, and date
+- **Smart Matching**: AI-powered recommendations based on your setlists and preferences
+- **One-Tap Applications**: Apply to gigs using your existing setlists as portfolios
+- **Venue Tools**: Post gigs, review applicants, manage bookings
+- **Booking Management**: Track applications, confirmed gigs, and performance history
+- **Ratings & Reviews**: Build reputation through verified performance reviews
+- **In-App Messaging**: Communicate directly with venues or musicians
+
+## Architecture
+
+### Backend (.NET 8 API)
+- **Location**: `/backend/StageReady.Api`
+- **Stack**: .NET 8 Minimal APIs, Entity Framework Core, PostgreSQL
+- **Features**: 
+  - JWT Authentication
+  - Sheet CRUD operations
+  - ChordPro formatting service
+  - Provider adapters for licensed content
+  - Preferences management
+
+### Mobile App (React Native)
+- **Location**: `/mobile`
+- **Stack**: React Native with Expo, TypeScript, React Query
+- **Features**:
+  - Tab-based navigation (Library, Setlists, Settings)
+  - Authentication with secure token storage
+  - Offline-first data caching
+  - Performance mode with keep-awake
+
+## Getting Started
+
+### Prerequisites
+
+- **Backend**:
+  - .NET 8 SDK
+  - PostgreSQL 14+
+  - Optional: Azure account for cloud services
+
+- **Mobile**:
+  - Node.js 18+
+  - Expo CLI
+  - iOS Simulator (Mac) or Android Emulator
+
+### Backend Setup
+
+1. **Navigate to backend directory**:
+   ```powershell
+   cd backend/StageReady.Api
+   ```
+
+2. **Update connection string** in `appsettings.json`:
+   ```json
+   "ConnectionStrings": {
+     "DefaultConnection": "Host=localhost;Database=stageready;Username=postgres;Password=yourpassword"
+   }
+   ```
+
+3. **Create database migrations**:
+   ```powershell
+   dotnet ef migrations add InitialCreate
+   dotnet ef database update
+   ```
+
+4. **Run the API**:
+   ```powershell
+   dotnet run
+   ```
+
+   API will be available at `https://localhost:5001` (or configured port)
+
+### Mobile Setup
+
+1. **Navigate to mobile directory**:
+   ```powershell
+   cd mobile
+   ```
+
+2. **Install dependencies**:
+   ```powershell
+   npm install
+   ```
+
+3. **Update API URL** in `lib/api.ts`:
+   ```typescript
+   const API_URL = 'http://localhost:5000/api/v1';
+   ```
+   
+   For iOS simulator, use `http://localhost:5000`  
+   For Android emulator, use `http://10.0.2.2:5000`
+
+4. **Start Expo**:
+   ```powershell
+   npm start
+   ```
+
+5. **Run on device/simulator**:
+   - Press `i` for iOS simulator
+   - Press `a` for Android emulator
+   - Scan QR code with Expo Go app for physical device
+
+## Database Schema
+
+See [spec.md](ai/spec.md) for complete schema. Key tables:
+
+- `users` - User accounts
+- `sheets` - Chord sheets
+- `directories` - Organization folders (gigs)
+- `setlists` - Song lists for performances
+- `setlist_items` - Songs in setlists
+- `preferences` - User display preferences
+- `providers` - Third-party service integrations (PAT storage)
+
+## API Endpoints
+
+Full OpenAPI specification: [openapi.yaml](ai/openapi.yaml)
+
+Key endpoints:
+- `POST /api/v1/auth/signup` - Create account
+- `POST /api/v1/auth/login` - Sign in
+- `GET /api/v1/sheets` - List sheets
+- `POST /api/v1/sheets/import` - Import sheet
+- `POST /api/v1/sheets/{id}/transpose` - Transpose key
+- `GET /api/v1/directories` - List directories
+- `POST /api/v1/setlists` - Create setlist
+
+## Development
+
+### Backend Development
+
+```powershell
+cd backend/ChordKeeper.Api
+dotnet watch run
+```
+
+### Mobile Development
+
+```powershell
+cd mobile
+npm start
+```
+
+For hot reload, the app will automatically refresh on file changes.
+
+### Adding Database Migrations
+
+```powershell
+cd backend/ChordKeeper.Api
+dotnet ef migrations add YourMigrationName
+dotnet ef database update
+```
+
+## Project Structure
+
+```
+GigCentral/
+├── ai/
+│   ├── openapi.yaml          # API specification
+│   ├── RDP.md                # Requirements document
+│   └── spec.md               # Technical specification
+├── backend/
+│   └── ChordKeeper.Api/
+│       ├── Data/             # EF Core context
+│       ├── Models/           # Entity models
+│       ├── DTOs/             # Data transfer objects
+│       ├── Services/         # Business logic
+│       ├── Endpoints/        # API endpoints
+│       └── Program.cs        # App entry point
+└── mobile/
+    ├── app/                  # Expo Router screens
+    │   ├── (tabs)/          # Tab navigation
+    │   ├── login.tsx        # Auth screens
+    │   └── sheet/           # Sheet viewer
+    ├── lib/                  # Services & utilities
+    ├── contexts/             # React contexts
+    └── package.json
+```
+
+## Configuration
+
+### Backend Configuration
+
+Edit `backend/ChordKeeper.Api/appsettings.json`:
+
+- `ConnectionStrings:DefaultConnection` - PostgreSQL connection
+- `JwtSettings:SecretKey` - JWT signing key (min 32 chars)
+- `JwtSettings:Issuer` - Token issuer
+- `JwtSettings:Audience` - Token audience
+
+### Mobile Configuration
+
+Edit `mobile/lib/api.ts`:
+
+- `API_URL` - Backend API base URL
+
+## Production Deployment
+
+### Backend (Azure)
+
+1. Create Azure App Service or Function App
+2. Configure PostgreSQL (Azure Database for PostgreSQL)
+3. Set environment variables:
+   - Connection strings
+   - JWT settings
+   - Azure Key Vault for secrets
+4. Deploy via GitHub Actions or Azure CLI
+
+### Mobile (App Stores)
+
+1. **iOS**:
+   ```powershell
+   npx expo build:ios
+   ```
+   Submit to App Store Connect
+
+2. **Android**:
+   ```powershell
+   npx expo build:android
+   ```
+   Submit to Google Play Console
+
+## Testing
+
+### Backend Tests
+```powershell
+cd backend/ChordKeeper.Api.Tests
+dotnet test
+```
+
+### Mobile Tests
+```powershell
+cd mobile
+npm test
+```
+
+## License
+
+See [LICENSE](LICENSE) file for details.
+
+## Documentation
+
+- [Requirements Document (RDP)](ai/RDP.md)
+- [Technical Specification](ai/spec.md)
+- [API Documentation](ai/openapi.yaml)
+
+## Support
+
+For issues and questions, please create an issue in the repository.
+
+---
+
+**ChordKeeper** - Never miss a chord change again! 🎸

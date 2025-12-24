@@ -1,5 +1,5 @@
 
-# Sprint 1 Backlog — ChordKeeper (2 weeks)
+# Sprint 1 Backlog — StageReady (2 weeks)
 
 ## Goals
 Deliver the core skeleton enabling: authentication, local import, rules-engine formatter, directories/setlists, and offline cache. Keep cloud costs minimal by using serverless and on-device processing where possible.

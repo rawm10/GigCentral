@@ -1,0 +1,511 @@
+
+openapi: 3.0.3
+info:
+  title: ChordKeeper API
+  version: 1.0.0
+  description: Backend-for-Frontend API for ChordKeeper mobile app.
+servers:
+  - url: https://api.chordkeeper.app/api/v1
+paths:
+  /auth/signup:
+    post:
+      summary: Sign up
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email: { type: string, format: email }
+                password: { type: string, minLength: 8 }
+                displayName: { type: string }
+              required: [email, password]
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '400': { $ref: '#/components/responses/BadRequest' }
+  /auth/login:
+    post:
+      summary: Login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email: { type: string, format: email }
+                password: { type: string }
+              required: [email, password]
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '401': { $ref: '#/components/responses/Unauthorized' }
+  /auth/refresh:
+    post:
+      summary: Refresh token
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '401': { $ref: '#/components/responses/Unauthorized' }
+  /providers:
+    get:
+      summary: List provider PATs
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/Provider' }
+    post:
+      summary: Add/update provider PAT
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProviderInput'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Provider'
+  /sheets:
+    get:
+      summary: List sheets
+      parameters:
+        - in: query
+          name: directoryId
+          schema: { type: string, format: uuid }
+        - in: query
+          name: page
+          schema: { type: integer, minimum: 1 }
+        - in: query
+          name: pageSize
+          schema: { type: integer, minimum: 1, maximum: 100 }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/SheetSummary' }
+    post:
+      summary: Create sheet
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SheetInput'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Sheet'
+  /sheets/import:
+    post:
+      summary: Import sheet from text/file/provider
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                sourceType:
+                  type: string
+                  enum: [text, file, provider]
+                body: { type: string }
+                providerName: { type: string }
+                providerSongId: { type: string }
+                patId: { type: string, format: uuid }
+              required: [sourceType]
+      responses:
+        '201':
+          description: Imported
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Sheet'
+        '422': { $ref: '#/components/responses/Unprocessable' }
+  /sheets/{id}:
+    get:
+      summary: Get sheet
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Sheet'
+    put:
+      summary: Update sheet
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SheetInput'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Sheet'
+    delete:
+      summary: Delete sheet
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '204': { description: No Content }
+  /sheets/{id}/format:
+    post:
+      summary: Format sheet for viewport
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                strategy: { type: string, enum: [auto, rules] }
+                viewport:
+                  type: object
+                  properties:
+                    width: { type: integer }
+                    height: { type: integer }
+                    dpi: { type: integer }
+                options:
+                  type: object
+                  properties:
+                    fontScale: { type: number }
+                    avoidScroll: { type: boolean }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  formattedBody: { type: string }
+                  metrics:
+                    type: object
+                    properties:
+                      lines: { type: integer }
+                      estimatedPageCount: { type: integer }
+  /sheets/{id}/transpose:
+    post:
+      summary: Transpose or Nashville conversion
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                semitones: { type: integer }
+                useNashville: { type: boolean }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Sheet'
+  /directories:
+    get:
+      summary: List directories
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/Directory' }
+    post:
+      summary: Create directory
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DirectoryInput'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Directory'
+  /directories/{id}:
+    put:
+      summary: Update directory
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DirectoryInput'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Directory'
+    delete:
+      summary: Delete directory
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '204': { description: No Content }
+  /setlists:
+    post:
+      summary: Create setlist in a directory
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                directoryId: { type: string, format: uuid }
+                name: { type: string }
+              required: [directoryId, name]
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Setlist'
+  /setlists/{id}/items:
+    post:
+      summary: Add item to setlist
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                sheetId: { type: string, format: uuid }
+                position: { type: integer }
+              required: [sheetId]
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SetlistItem'
+  /preferences:
+    get:
+      summary: Get user preferences
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Preferences'
+    put:
+      summary: Update preferences
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Preferences'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Preferences'
+  /exports/pdf:
+    post:
+      summary: Export a setlist or sheet as PDF
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                sheetId: { type: string, format: uuid }
+                setlistId: { type: string, format: uuid }
+              oneOf:
+                - required: [sheetId]
+                - required: [setlistId]
+      responses:
+        '202':
+          description: Accepted (export job queued)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  jobId: { type: string }
+
+components:
+  schemas:
+    AuthResponse:
+      type: object
+      properties:
+        accessToken: { type: string }
+        refreshToken: { type: string }
+        user:
+          type: object
+          properties:
+            id: { type: string }
+            email: { type: string }
+            displayName: { type: string }
+    Provider:
+      type: object
+      properties:
+        id: { type: string }
+        name: { type: string }
+        createdAt: { type: string, format: date-time }
+    ProviderInput:
+      type: object
+      properties:
+        name: { type: string, example: 'ultimate-guitar' }
+        pat: { type: string }
+      required: [name, pat]
+    SheetSummary:
+      type: object
+      properties:
+        id: { type: string }
+        title: { type: string }
+        artist: { type: string }
+        key: { type: string }
+        updatedAt: { type: string, format: date-time }
+    Sheet:
+      type: object
+      properties:
+        id: { type: string }
+        title: { type: string }
+        artist: { type: string }
+        key: { type: string }
+        capo: { type: integer }
+        format: { type: string, enum: ['chordpro','plain'] }
+        body: { type: string }
+        source: { type: string }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+    SheetInput:
+      type: object
+      properties:
+        title: { type: string }
+        artist: { type: string }
+        key: { type: string }
+        capo: { type: integer }
+        format: { type: string, enum: ['chordpro','plain'] }
+        body: { type: string }
+        source: { type: string }
+      required: [title, body]
+    Directory:
+      type: object
+      properties:
+        id: { type: string }
+        name: { type: string }
+        description: { type: string }
+        sortOrder: { type: integer }
+    DirectoryInput:
+      type: object
+      properties:
+        name: { type: string }
+        description: { type: string }
+        sortOrder: { type: integer }
+      required: [name]
+    Setlist:
+      type: object
+      properties:
+        id: { type: string }
+        directoryId: { type: string }
+        name: { type: string }
+        createdAt: { type: string, format: date-time }
+    SetlistItem:
+      type: object
+      properties:
+        id: { type: string }
+        setlistId: { type: string }
+        sheetId: { type: string }
+        position: { type: integer }
+    Preferences:
+      type: object
+      properties:
+        fontScale: { type: number }
+        theme: { type: string, enum: ['light','dark','high-contrast'] }
+        autoScroll: { type: boolean }
+        scrollBpm: { type: integer }
+        highContrast: { type: boolean }
+  responses:
+    BadRequest:
+      description: Bad Request
+    Unauthorized:
+      description: Unauthorized
+    Unprocessable:
+      description: Unprocessable Entity

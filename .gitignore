@@ -1,0 +1,42 @@
+*.swp
+*.swo
+*~
+.DS_Store
+.env
+.env.local
+
+# Backend
+**/bin/
+**/obj/
+**/.vs/
+**/.vscode/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+appsettings.Development.json
+appsettings.Local.json
+
+# Mobile
+node_modules/
+.expo/
+.expo-shared/
+npm-debug.*
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+*.orig.*
+web-build/
+dist/
+
+# IDE
+.idea/
+*.swp
+*.swo
+.vscode/
+
+# Logs
+logs/
+*.log
