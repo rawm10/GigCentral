@@ -40,3 +40,6 @@ dist/
 # Logs
 logs/
 *.log
+
+# Mds
+sprint1_backlog.md
