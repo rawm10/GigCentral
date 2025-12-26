@@ -21,7 +21,7 @@ public class FormatterService : IFormatterService
         _logger = logger;
     }
     
-    public async Task<string> FormatToChordProAsync(string input, bool chordsOnly = false)
+    public async Task<string> FormatToChordProAsync(string input, bool chordsOnly = false, string? customInstructions = null)
     {
         // Try AI formatting first if enabled
         var aiEnabled = _configuration.GetValue<bool>("AzureOpenAI:Enabled");
@@ -29,7 +29,7 @@ public class FormatterService : IFormatterService
         {
             try
             {
-                var aiResult = await FormatWithAIAsync(input, chordsOnly);
+                var aiResult = await FormatWithAIAsync(input, chordsOnly, customInstructions);
                 if (!string.IsNullOrEmpty(aiResult))
                 {
                     return aiResult;
@@ -45,7 +45,7 @@ public class FormatterService : IFormatterService
         return FormatWithRules(input, chordsOnly);
     }
     
-    private async Task<string> FormatWithAIAsync(string input, bool chordsOnly)
+    private async Task<string> FormatWithAIAsync(string input, bool chordsOnly, string? customInstructions = null)
     {
         var endpoint = _configuration["AzureOpenAI:Endpoint"];
         var apiKey = _configuration["AzureOpenAI:ApiKey"];
@@ -85,12 +85,19 @@ Rules:
 
 Output ONLY the formatted ChordPro text, nothing else.";
 
+        // Add custom instructions if provided
+        var userPrompt = input;
+        if (!string.IsNullOrEmpty(customInstructions))
+        {
+            userPrompt = $"{input}\n\n---\nAdditional Instructions: {customInstructions}";
+        }
+
         var requestBody = new
         {
             messages = new[]
             {
                 new { role = "system", content = systemPrompt },
-                new { role = "user", content = input }
+                new { role = "user", content = userPrompt }
             },
             temperature = 0.3,
             max_tokens = 2000

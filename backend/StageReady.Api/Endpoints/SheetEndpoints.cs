@@ -94,7 +94,8 @@ public static class SheetEndpoints
             {
                 var formattedBody = await formatterService.FormatToChordProAsync(
                     request.Body, 
-                    request.ChordsOnly);
+                    request.ChordsOnly,
+                    request.CustomInstructions);
                 
                 return Results.Ok(new { formattedBody });
             }
