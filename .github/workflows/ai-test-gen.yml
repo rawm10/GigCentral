@@ -133,8 +133,23 @@ jobs:
             # Call API
             RESPONSE=$(curl -s -X POST "https://models.inference.ai.azure.com/chat/completions" -H "Content-Type: application/json" -H "Authorization: Bearer $GITHUB_TOKEN" -d "{\"messages\":[{\"role\":\"system\",\"content\":\"Expert test engineer.\"},{\"role\":\"user\",\"content\":$PROMPT_JSON}],\"model\":\"gpt-4o\",\"temperature\":0.3,\"max_tokens\":4000}")
             
-            # Extract code
-            TEST_CODE=$(echo "$RESPONSE" | jq -r '.choices[0].message.content' | sed 's/^```[a-z]*//;s/```$//')
+            # Extract code and clean it
+            TEST_CODE=$(echo "$RESPONSE" | jq -r '.choices[0].message.content')
+            
+            # Remove markdown code fences if present
+            TEST_CODE=$(echo "$TEST_CODE" | sed -n '/^```/,/^```/!p' | sed '1{/^```/d}' | sed '$d')
+            
+            # If still has fences, try aggressive removal
+            if echo "$TEST_CODE" | grep -q '^```'; then
+              TEST_CODE=$(echo "$TEST_CODE" | sed 's/^```[a-z]*$//' | sed 's/^```$//' | grep -v '^```')
+            fi
+            
+            # Validate we have actual code
+            if [ -z "$TEST_CODE" ] || [ ${#TEST_CODE} -lt 10 ]; then
+              echo "⚠️ Warning: Generated code appears empty or invalid for $file"
+              echo "Response: $RESPONSE" | head -20
+              continue
+            fi
             
             # Save generated test
             mkdir -p "$(dirname "$TEST_FILE")"
