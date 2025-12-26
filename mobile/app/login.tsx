@@ -31,11 +31,16 @@ export default function LoginScreen() {
 
     setIsLoading(true);
     try {
+      console.log('Login: attempting login for', email);
       await login(email, password);
-      router.replace('/(tabs)/library');
+      console.log('Login: success, navigating to library');
+      // Use setTimeout to ensure state updates have propagated
+      setTimeout(() => {
+        router.replace('/(tabs)/library');
+      }, 100);
     } catch (error: any) {
+      console.error('Login: failed', error);
       Alert.alert('Login Failed', error.response?.data?.error || 'Invalid credentials');
-    } finally {
       setIsLoading(false);
     }
   };
