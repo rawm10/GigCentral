@@ -135,7 +135,7 @@ jobs:
               -H "x-api-key: $ANTHROPIC_API_KEY" \
               -H "anthropic-version: 2023-06-01" \
               -H "content-type: application/json" \
-              -d "{\"model\":\"claude-3-sonnet-20240229\",\"max_tokens\":4000,\"messages\":[{\"role\":\"user\",\"content\":$PROMPT_JSON}]}")
+              -d "{\"model\":\"claude-3-haiku-20240307\",\"max_tokens\":4000,\"messages\":[{\"role\":\"user\",\"content\":$PROMPT_JSON}]}")
             
             # Debug: Show response
             echo "API Response for $file:"
