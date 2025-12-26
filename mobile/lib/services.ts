@@ -121,6 +121,11 @@ export const directoryService = {
     return response.data;
   },
 
+  async getDirectory(id: string) {
+    const response = await api.get(`/directories/${id}`);
+    return response.data;
+  },
+
   async createDirectory(data: any) {
     const response = await api.post('/directories', data);
     return response.data;
@@ -137,6 +142,16 @@ export const directoryService = {
 };
 
 export const setlistService = {
+  async getSetlistsByDirectory(directoryId: string) {
+    const response = await api.get(`/setlists/directory/${directoryId}`);
+    return response.data;
+  },
+
+  async getSetlist(setlistId: string) {
+    const response = await api.get(`/setlists/${setlistId}`);
+    return response.data;
+  },
+
   async createSetlist(directoryId: string, name: string) {
     const response = await api.post('/setlists', {
       directoryId,
@@ -151,6 +166,14 @@ export const setlistService = {
       position,
     });
     return response.data;
+  },
+
+  async removeItem(setlistId: string, itemId: string) {
+    await api.delete(`/setlists/${setlistId}/items/${itemId}`);
+  },
+
+  async reorderItems(setlistId: string, items: { id: string; position: number }[]) {
+    await api.patch(`/setlists/${setlistId}/reorder`, { items });
   },
 };
 

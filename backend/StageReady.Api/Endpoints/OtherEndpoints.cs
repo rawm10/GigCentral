@@ -64,6 +64,16 @@ public static class DirectoryEndpoints
             return Results.Ok(directories);
         });
 
+        group.MapGet("/{id:guid}", async (
+            Guid id,
+            HttpContext context,
+            IDirectoryService directoryService) =>
+        {
+            var userId = GetUserId(context);
+            var directory = await directoryService.GetDirectoryAsync(id, userId);
+            return directory != null ? Results.Ok(directory) : Results.NotFound();
+        });
+
         group.MapPost("", async (
             [FromBody] DirectoryInput input,
             HttpContext context,
@@ -128,6 +138,26 @@ public static class SetlistEndpoints
             .WithTags("Setlists")
             .RequireAuthorization();
 
+        group.MapGet("/directory/{directoryId:guid}", async (
+            Guid directoryId,
+            HttpContext context,
+            ISetlistService setlistService) =>
+        {
+            var userId = GetUserId(context);
+            var setlists = await setlistService.GetSetlistsByDirectoryAsync(directoryId, userId);
+            return Results.Ok(setlists);
+        });
+
+        group.MapGet("/{id:guid}", async (
+            Guid id,
+            HttpContext context,
+            ISetlistService setlistService) =>
+        {
+            var userId = GetUserId(context);
+            var setlist = await setlistService.GetSetlistAsync(id, userId);
+            return setlist != null ? Results.Ok(setlist) : Results.NotFound();
+        });
+
         group.MapPost("", async (
             [FromBody] CreateSetlistRequest request,
             HttpContext context,
@@ -160,6 +190,42 @@ public static class SetlistEndpoints
             catch (KeyNotFoundException ex)
             {
                 return Results.BadRequest(new { error = ex.Message });
+            }
+        });
+
+        group.MapDelete("/{setlistId:guid}/items/{itemId:guid}", async (
+            Guid setlistId,
+            Guid itemId,
+            HttpContext context,
+            ISetlistService setlistService) =>
+        {
+            try
+            {
+                var userId = GetUserId(context);
+                await setlistService.RemoveItemAsync(setlistId, itemId, userId);
+                return Results.NoContent();
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return Results.NotFound(new { error = ex.Message });
+            }
+        });
+
+        group.MapPatch("/{id:guid}/reorder", async (
+            Guid id,
+            [FromBody] ReorderItemsRequest request,
+            HttpContext context,
+            ISetlistService setlistService) =>
+        {
+            try
+            {
+                var userId = GetUserId(context);
+                await setlistService.ReorderItemsAsync(id, request, userId);
+                return Results.NoContent();
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return Results.NotFound(new { error = ex.Message });
             }
         });
     }

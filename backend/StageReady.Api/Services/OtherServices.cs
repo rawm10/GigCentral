@@ -70,6 +70,21 @@ public class DirectoryService : IDirectoryService
             .ToListAsync();
     }
 
+    public async Task<DirectoryResponse?> GetDirectoryAsync(Guid id, Guid userId)
+    {
+        var directory = await _context.Directories
+            .FirstOrDefaultAsync(d => d.Id == id && d.UserId == userId);
+        
+        if (directory == null) return null;
+        
+        return new DirectoryResponse(
+            directory.Id.ToString(),
+            directory.Name,
+            directory.Description,
+            directory.SortOrder
+        );
+    }
+
     public async Task<DirectoryResponse> CreateDirectoryAsync(DirectoryInput input, Guid userId)
     {
         var directory = new Models.Directory
@@ -140,6 +155,29 @@ public class SetlistService : ISetlistService
         _context = context;
     }
 
+    public async Task<IEnumerable<SetlistResponse>> GetSetlistsByDirectoryAsync(Guid directoryId, Guid userId)
+    {
+        return await _context.Setlists
+            .Include(s => s.Items)
+            .ThenInclude(i => i.Sheet)
+            .Where(s => s.DirectoryId == directoryId && s.Directory!.UserId == userId)
+            .Select(s => new SetlistResponse(
+                s.Id.ToString(),
+                s.DirectoryId.ToString(),
+                s.Name,
+                s.Items.OrderBy(i => i.Position).Select(i => new SetlistItemResponse(
+                    i.Id.ToString(),
+                    i.SheetId.ToString(),
+                    i.Position,
+                    i.Sheet.Title,
+                    i.Sheet.Artist,
+                    i.Sheet.Key
+                )).ToList(),
+                s.CreatedAt
+            ))
+            .ToListAsync();
+    }
+
     public async Task<SetlistResponse> CreateSetlistAsync(CreateSetlistRequest request, Guid userId)
     {
         var directory = await _context.Directories
@@ -163,8 +201,35 @@ public class SetlistService : ISetlistService
             setlist.Id.ToString(),
             setlist.DirectoryId.ToString(),
             setlist.Name,
+            null,
             setlist.CreatedAt
         );
+    }
+
+    public async Task<SetlistResponse?> GetSetlistAsync(Guid setlistId, Guid userId)
+    {
+        var setlist = await _context.Setlists
+            .Include(s => s.Directory)
+            .Include(s => s.Items)
+            .ThenInclude(i => i.Sheet)
+            .Where(s => s.Id == setlistId && s.Directory.UserId == userId)
+            .Select(s => new SetlistResponse(
+                s.Id.ToString(),
+                s.DirectoryId.ToString(),
+                s.Name,
+                s.Items.OrderBy(i => i.Position).Select(i => new SetlistItemResponse(
+                    i.Id.ToString(),
+                    i.SheetId.ToString(),
+                    i.Position,
+                    i.Sheet.Title,
+                    i.Sheet.Artist,
+                    i.Sheet.Key
+                )).ToList(),
+                s.CreatedAt
+            ))
+            .FirstOrDefaultAsync();
+
+        return setlist;
     }
 
     public async Task<SetlistItemResponse> AddItemAsync(Guid setlistId, AddSetlistItemRequest request, Guid userId)
@@ -177,6 +242,12 @@ public class SetlistService : ISetlistService
         if (setlist == null)
         {
             throw new KeyNotFoundException("Setlist not found");
+        }
+
+        var sheet = await _context.Sheets.FindAsync(request.SheetId);
+        if (sheet == null)
+        {
+            throw new KeyNotFoundException("Sheet not found");
         }
 
         var position = request.Position ?? (setlist.Items.Any() ? setlist.Items.Max(i => i.Position) + 1 : 0);
@@ -193,10 +264,52 @@ public class SetlistService : ISetlistService
 
         return new SetlistItemResponse(
             item.Id.ToString(),
-            item.SetlistId.ToString(),
             item.SheetId.ToString(),
-            item.Position
+            item.Position,
+            sheet.Title,
+            sheet.Artist,
+            sheet.Key
         );
+    }
+
+    public async Task RemoveItemAsync(Guid setlistId, Guid itemId, Guid userId)
+    {
+        var item = await _context.SetlistItems
+            .Include(i => i.Setlist)
+            .ThenInclude(s => s.Directory)
+            .FirstOrDefaultAsync(i => i.Id == itemId && i.SetlistId == setlistId && i.Setlist.Directory.UserId == userId);
+
+        if (item == null)
+        {
+            throw new KeyNotFoundException("Setlist item not found");
+        }
+
+        _context.SetlistItems.Remove(item);
+        await _context.SaveChangesAsync();
+    }
+
+    public async Task ReorderItemsAsync(Guid setlistId, ReorderItemsRequest request, Guid userId)
+    {
+        var setlist = await _context.Setlists
+            .Include(s => s.Directory)
+            .Include(s => s.Items)
+            .FirstOrDefaultAsync(s => s.Id == setlistId && s.Directory.UserId == userId);
+
+        if (setlist == null)
+        {
+            throw new KeyNotFoundException("Setlist not found");
+        }
+
+        foreach (var reorderItem in request.Items)
+        {
+            var item = setlist.Items.FirstOrDefault(i => i.Id == reorderItem.Id);
+            if (item != null)
+            {
+                item.Position = reorderItem.Position;
+            }
+        }
+
+        await _context.SaveChangesAsync();
     }
 }
 
