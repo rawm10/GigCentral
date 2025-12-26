@@ -109,29 +109,32 @@ jobs:
               ACTION="CREATE"
             fi
             
-            # Build prompt
-            PROMPT="You are a test engineer. ${ACTION} comprehensive unit tests using ${FRAMEWORK} to achieve 90% coverage.
-
-SOURCE CODE:
-$CONTENT"
-
-            [ -n "$EXISTING_TEST" ] && PROMPT="$PROMPT
-
-EXISTING TESTS (expand these):
-$EXISTING_TEST"
-
-            PROMPT="$PROMPT
-
-OUTPUT: Complete test file code only, no markdown fences."
+            # Build prompt in temp file
+            cat > /tmp/prompt.txt << 'PROMPTEND'
+            You are a test engineer. Generate comprehensive unit tests to achieve 90% coverage.
+            PROMPTEND
+                        
+            echo "" >> /tmp/prompt.txt
+            echo "FRAMEWORK: ${FRAMEWORK}" >> /tmp/prompt.txt
+            echo "ACTION: ${ACTION}" >> /tmp/prompt.txt
+            echo "" >> /tmp/prompt.txt
+            echo "SOURCE CODE:" >> /tmp/prompt.txt
+            echo "$CONTENT" >> /tmp/prompt.txt
+            
+            if [ -n "$EXISTING_TEST" ]; then
+              echo "" >> /tmp/prompt.txt
+              echo "EXISTING TESTS (expand these):" >> /tmp/prompt.txt
+              echo "$EXISTING_TEST" >> /tmp/prompt.txt
+            fi
+            
+            echo "" >> /tmp/prompt.txt
+            echo "OUTPUT: Complete test file code only, no markdown fences." >> /tmp/prompt.txt
             
             # Escape for JSON
-            PROMPT_ESCAPED=$(echo "$PROMPT" | python3 -c "import sys, json; print(json.dumps(sys.stdin.read()))")
+            PROMPT_JSON=$(cat /tmp/prompt.txt | python3 -c "import sys, json; print(json.dumps(sys.stdin.read()))")
             
             # Call API
-            RESPONSE=$(curl -s -X POST "https://models.inference.ai.azure.com/chat/completions" \
-              -H "Content-Type: application/json" \
-              -H "Authorization: Bearer $GITHUB_TOKEN" \
-              -d "{\"messages\":[{\"role\":\"system\",\"content\":\"Expert test engineer. Generate complete test files.\"},{\"role\":\"user\",\"content\":$PROMPT_ESCAPED}],\"model\":\"gpt-4o\",\"temperature\":0.3,\"max_tokens\":4000}")
+            RESPONSE=$(curl -s -X POST "https://models.inference.ai.azure.com/chat/completions" -H "Content-Type: application/json" -H "Authorization: Bearer $GITHUB_TOKEN" -d "{\"messages\":[{\"role\":\"system\",\"content\":\"Expert test engineer.\"},{\"role\":\"user\",\"content\":$PROMPT_JSON}],\"model\":\"gpt-4o\",\"temperature\":0.3,\"max_tokens\":4000}")
             
             # Extract code
             TEST_CODE=$(echo "$RESPONSE" | jq -r '.choices[0].message.content' | sed 's/^```[a-z]*//;s/```$//')
