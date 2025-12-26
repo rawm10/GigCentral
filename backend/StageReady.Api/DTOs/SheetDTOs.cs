@@ -39,6 +39,12 @@ public record ImportSheetRequest(
     Guid? PatId
 );
 
+public record PreviewFormatRequest(
+    string Body,
+    bool ChordsOnly,
+    string? CustomInstructions
+);
+
 public record FormatSheetRequest(
     string? Strategy,
     ViewportInfo? Viewport,

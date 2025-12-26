@@ -1,16 +1,134 @@
 using StageReady.Api.DTOs;
 using System.Text.RegularExpressions;
+using System.Text.Json;
+using System.Text;
 
 namespace StageReady.Api.Services;
 
 public class FormatterService : IFormatterService
 {
-    public async Task<string> FormatToChordProAsync(string input)
+    private readonly IConfiguration _configuration;
+    private readonly HttpClient _httpClient;
+    private readonly ILogger<FormatterService> _logger;
+    
+    public FormatterService(
+        IConfiguration configuration,
+        HttpClient httpClient,
+        ILogger<FormatterService> logger)
     {
-        // This is a basic rules-based formatter
-        // In production, this would call Azure OpenAI for AI-powered formatting
+        _configuration = configuration;
+        _httpClient = httpClient;
+        _logger = logger;
+    }
+    
+    public async Task<string> FormatToChordProAsync(string input, bool chordsOnly = false)
+    {
+        // Try AI formatting first if enabled
+        var aiEnabled = _configuration.GetValue<bool>("AzureOpenAI:Enabled");
+        if (aiEnabled)
+        {
+            try
+            {
+                var aiResult = await FormatWithAIAsync(input, chordsOnly);
+                if (!string.IsNullOrEmpty(aiResult))
+                {
+                    return aiResult;
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "AI formatting failed, falling back to rules-based formatting");
+            }
+        }
         
-        await Task.CompletedTask;
+        // Fall back to rules-based formatting
+        return FormatWithRules(input, chordsOnly);
+    }
+    
+    private async Task<string> FormatWithAIAsync(string input, bool chordsOnly)
+    {
+        var endpoint = _configuration["AzureOpenAI:Endpoint"];
+        var apiKey = _configuration["AzureOpenAI:ApiKey"];
+        var deploymentName = _configuration["AzureOpenAI:DeploymentName"];
+        
+        if (string.IsNullOrEmpty(endpoint) || string.IsNullOrEmpty(apiKey))
+        {
+            return string.Empty;
+        }
+        
+        var url = $"{endpoint}/openai/deployments/{deploymentName}/chat/completions?api-version=2024-08-01-preview";
+        
+        var systemPrompt = chordsOnly 
+            ? @"You are a chord sheet formatter. Format the chord progression in a clean, easy-to-read format.
+
+Rules:
+1. Extract ONLY the chords from the input
+2. Use {title: ...}, {artist: ...}, {key: ...}, {capo: ...} for metadata if present
+3. Wrap ALL chords in brackets like [C], [Am], [G7]
+4. Organize chords by section (Verse, Chorus, Bridge, etc.)
+5. Use chord diagrams/progressions format: [C] [Am] [F] [G]
+6. Include timing/bar information if present (e.g., | [C] | [Am] | [F] [G] |)
+7. Remove all lyrics, keep only chord information
+
+Output ONLY the formatted chord progression, nothing else."
+            : @"You are a chord sheet formatter. Convert the user's input into clean ChordPro format.
+
+Rules:
+1. Use {title: ...}, {artist: ...}, {key: ...}, {capo: ...} for metadata
+2. Wrap ALL chords in brackets like [C], [Am], [G7]
+3. Place chords inline with lyrics at the position they should be played
+4. Preserve song structure (verses, choruses, bridge, etc.) using {start_of_verse}, {end_of_verse}, etc.
+5. Remove any tab notation or guitar tablature
+6. Clean up formatting but preserve the song's content
+7. If key or capo info is present, extract it to metadata
+8. Make it clean, readable, and easy to play
+
+Output ONLY the formatted ChordPro text, nothing else.";
+
+        var requestBody = new
+        {
+            messages = new[]
+            {
+                new { role = "system", content = systemPrompt },
+                new { role = "user", content = input }
+            },
+            temperature = 0.3,
+            max_tokens = 2000
+        };
+        
+        var request = new HttpRequestMessage(HttpMethod.Post, url);
+        request.Headers.Add("api-key", apiKey);
+        request.Content = new StringContent(
+            JsonSerializer.Serialize(requestBody),
+            Encoding.UTF8,
+            "application/json");
+        
+        var response = await _httpClient.SendAsync(request);
+        response.EnsureSuccessStatusCode();
+        
+        var responseBody = await response.Content.ReadAsStringAsync();
+        using var doc = JsonDocument.Parse(responseBody);
+        
+        if (doc.RootElement.TryGetProperty("choices", out var choices) &&
+            choices.GetArrayLength() > 0)
+        {
+            var firstChoice = choices[0];
+            if (firstChoice.TryGetProperty("message", out var message) &&
+                message.TryGetProperty("content", out var content))
+            {
+                return content.GetString() ?? string.Empty;
+            }
+        }
+        
+        return string.Empty;
+    }
+    
+    private string FormatWithRules(string input, bool chordsOnly)
+    {
+        if (chordsOnly)
+        {
+            return ExtractChordsOnly(input);
+        }
         
         if (input.Contains("{title:") || input.Contains("{t:"))
         {
@@ -242,6 +360,74 @@ public class FormatterService : IFormatterService
         
         var newIndex = (index + semitones + 12) % 12;
         return notes[newIndex] + suffix;
+    }
+
+    private string ExtractChordsOnly(string input)
+    {
+        var output = new System.Text.StringBuilder();
+        var lines = input.Split('\n');
+        var chordPattern = new Regex(@"\b([A-G][#b]?(?:maj|min|m|M|sus|dim|aug|add)?[0-9]*)\b", RegexOptions.IgnoreCase);
+        
+        string? currentSection = null;
+        var sectionChords = new List<string>();
+        
+        for (int i = 0; i < lines.Length; i++)
+        {
+            var line = lines[i].Trim();
+            
+            if (string.IsNullOrWhiteSpace(line)) continue;
+            
+            // Detect section headers (Verse, Chorus, Bridge, etc.)
+            if (Regex.IsMatch(line, @"^(Verse|Chorus|Bridge|Intro|Outro|Pre-?Chorus|Interlude|Solo)", RegexOptions.IgnoreCase))
+            {
+                // Output previous section if exists
+                if (currentSection != null && sectionChords.Count > 0)
+                {
+                    output.AppendLine($"{{start_of_{currentSection.ToLower()}}}");
+                    output.AppendLine(string.Join(" ", sectionChords.Select(c => $"[{c}]")));
+                    output.AppendLine($"{{end_of_{currentSection.ToLower()}}}");
+                    output.AppendLine();
+                }
+                
+                currentSection = line;
+                sectionChords.Clear();
+                continue;
+            }
+            
+            // Extract chords from line
+            var matches = chordPattern.Matches(line);
+            if (matches.Count > 0)
+            {
+                foreach (Match match in matches)
+                {
+                    var chord = match.Groups[1].Value;
+                    // Capitalize first letter
+                    if (chord.Length > 0)
+                    {
+                        chord = char.ToUpper(chord[0]) + chord.Substring(1);
+                    }
+                    if (!sectionChords.Contains(chord))
+                    {
+                        sectionChords.Add(chord);
+                    }
+                }
+            }
+        }
+        
+        // Output last section
+        if (currentSection != null && sectionChords.Count > 0)
+        {
+            output.AppendLine($"{{start_of_{currentSection.ToLower()}}}");
+            output.AppendLine(string.Join(" ", sectionChords.Select(c => $"[{c}]")));
+            output.AppendLine($"{{end_of_{currentSection.ToLower()}}}");
+        }
+        else if (sectionChords.Count > 0)
+        {
+            // No sections detected, just output all chords
+            output.AppendLine(string.Join(" ", sectionChords.Select(c => $"[{c}]")));
+        }
+        
+        return output.ToString();
     }
 
     private static string ToNashville(string chord)

@@ -86,6 +86,24 @@ public static class SheetEndpoints
             }
         });
 
+        group.MapPost("/preview-format", async (
+            [FromBody] PreviewFormatRequest request,
+            IFormatterService formatterService) =>
+        {
+            try
+            {
+                var formattedBody = await formatterService.FormatToChordProAsync(
+                    request.Body, 
+                    request.ChordsOnly);
+                
+                return Results.Ok(new { formattedBody });
+            }
+            catch (Exception ex)
+            {
+                return Results.BadRequest(new { error = ex.Message });
+            }
+        });
+
         group.MapPost("/{id:guid}/format", async (
             Guid id,
             [FromBody] FormatSheetRequest request,

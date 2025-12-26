@@ -106,6 +106,11 @@ export const sheetService = {
     return response.data;
   },
 
+  async previewFormat(data: { body: string; chordsOnly: boolean; customInstructions?: string }) {
+    const response = await api.post('/sheets/preview-format', data);
+    return response.data;
+  },
+
   async transposeSheet(id: string, semitones: number, useNashville: boolean = false) {
     const response = await api.post(`/sheets/${id}/transpose`, {
       Semitones: semitones,
