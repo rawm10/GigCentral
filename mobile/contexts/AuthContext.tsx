@@ -25,11 +25,25 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       console.log('AuthContext: checkAuth starting...');
       const isAuth = await authService.isAuthenticated();
       console.log('AuthContext: isAuthenticated =', isAuth);
-      // In a real app, fetch user data here
+      
+      if (isAuth) {
+        // If we have a token, try to fetch user data from a /me endpoint
+        // For now, set a minimal user object to allow navigation
+        // TODO: Replace with actual /me API call when available
+        setUser({ 
+          id: 'temp-id', 
+          email: 'user@example.com',
+          displayName: 'User'
+        } as User);
+      } else {
+        setUser(null);
+      }
+      
       setIsLoading(false);
       console.log('AuthContext: checkAuth complete');
     } catch (error) {
       console.error('AuthContext: checkAuth error:', error);
+      setUser(null);
       setIsLoading(false);
     }
   };
