@@ -14,6 +14,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { sheetService, setlistService } from '../lib/services';
 import { SheetSummary } from '../lib/services';
+import { useTheme } from '../contexts/ThemeContext';
 
 export default function CreateSetlistScreen() {
   const { directoryId, setlistId } = useLocalSearchParams<{ directoryId: string; setlistId?: string }>();
@@ -21,6 +22,9 @@ export default function CreateSetlistScreen() {
   const [search, setSearch] = useState('');
   const [selectedSheets, setSelectedSheets] = useState<Set<string>>(new Set());
   const queryClient = useQueryClient();
+  const { theme } = useTheme();
+  
+  const styles = createStyles(theme);
 
   const isAddingToExisting = !!setlistId;
 
@@ -96,7 +100,7 @@ export default function CreateSetlistScreen() {
   if (sheetsLoading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#007AFF" />
+        <ActivityIndicator size="large" color={theme.colors.primary} />
       </View>
     );
   }
@@ -105,7 +109,7 @@ export default function CreateSetlistScreen() {
     <View style={styles.container}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-          <Ionicons name="arrow-back" size={24} color="#007AFF" />
+          <Ionicons name="arrow-back" size={24} color={theme.colors.primary} />
         </TouchableOpacity>
         <Text style={styles.title}>{isAddingToExisting ? 'Add Songs' : 'Create Setlist'}</Text>
         <TouchableOpacity
@@ -114,7 +118,7 @@ export default function CreateSetlistScreen() {
           style={styles.saveButton}
         >
           {(createSetlistMutation.isPending || addToSetlistMutation.isPending) ? (
-            <ActivityIndicator size="small" color="#007AFF" />
+            <ActivityIndicator size="small" color={theme.colors.primary} />
           ) : (
             <Text style={styles.saveButtonText}>{isAddingToExisting ? 'Add' : 'Create'}</Text>
           )}
@@ -130,7 +134,7 @@ export default function CreateSetlistScreen() {
               value={name}
               onChangeText={setName}
               placeholder="Enter setlist name"
-              placeholderTextColor="#999"
+              placeholderTextColor={theme.colors.textSecondary}
             />
           </>
         )}
@@ -141,7 +145,7 @@ export default function CreateSetlistScreen() {
           value={search}
           onChangeText={setSearch}
           placeholder="Search by title, artist, or key..."
-          placeholderTextColor="#999"
+          placeholderTextColor={theme.colors.textSecondary}
         />
       </View>
 
@@ -156,7 +160,7 @@ export default function CreateSetlistScreen() {
           >
             <View style={styles.checkbox}>
               {selectedSheets.has(item.id) && (
-                <Ionicons name="checkmark" size={20} color="#007AFF" />
+                <Ionicons name="checkmark" size={20} color={theme.colors.primary} />
               )}
             </View>
             <View style={styles.sheetInfo}>
@@ -182,16 +186,16 @@ export default function CreateSetlistScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (theme: any) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: theme.colors.background,
   },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#fff',
+    backgroundColor: theme.colors.background,
   },
   header: {
     flexDirection: 'row',
@@ -199,8 +203,9 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     padding: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
+    borderBottomColor: theme.colors.border,
     paddingTop: 50,
+    backgroundColor: theme.colors.surface,
   },
   backButton: {
     padding: 8,
@@ -208,46 +213,52 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 20,
     fontWeight: 'bold',
+    color: theme.colors.text,
   },
   saveButton: {
     padding: 8,
   },
   saveButtonText: {
-    color: '#007AFF',
+    color: theme.colors.primary,
     fontSize: 16,
     fontWeight: '600',
   },
   form: {
     padding: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
+    borderBottomColor: theme.colors.border,
+    backgroundColor: theme.colors.surface,
   },
   label: {
     fontSize: 14,
     fontWeight: '600',
     marginBottom: 8,
-    color: '#333',
+    color: theme.colors.text,
   },
   input: {
     borderWidth: 1,
-    borderColor: '#ddd',
+    borderColor: theme.colors.border,
+    backgroundColor: theme.colors.inputBackground,
     borderRadius: 8,
     padding: 12,
     fontSize: 16,
     marginBottom: 16,
+    color: theme.colors.text,
   },
   sectionTitle: {
     fontSize: 16,
     fontWeight: '600',
     marginBottom: 8,
-    color: '#333',
+    color: theme.colors.text,
   },
   searchInput: {
     borderWidth: 1,
-    borderColor: '#ddd',
+    borderColor: theme.colors.border,
+    backgroundColor: theme.colors.inputBackground,
     borderRadius: 8,
     padding: 12,
     fontSize: 16,
+    color: theme.colors.text,
   },
   listContent: {
     padding: 16,
@@ -256,7 +267,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     padding: 12,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: theme.colors.surface,
     borderRadius: 8,
     marginBottom: 8,
   },
@@ -264,7 +275,7 @@ const styles = StyleSheet.create({
     width: 24,
     height: 24,
     borderWidth: 2,
-    borderColor: '#007AFF',
+    borderColor: theme.colors.primary,
     borderRadius: 4,
     marginRight: 12,
     justifyContent: 'center',
@@ -276,16 +287,16 @@ const styles = StyleSheet.create({
   sheetTitle: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#333',
+    color: theme.colors.text,
   },
   sheetArtist: {
     fontSize: 14,
-    color: '#666',
+    color: theme.colors.textSecondary,
     marginTop: 2,
   },
   sheetKey: {
     fontSize: 12,
-    color: '#999',
+    color: theme.colors.textSecondary,
     marginTop: 2,
   },
   emptyContainer: {
@@ -294,7 +305,7 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     fontSize: 16,
-    color: '#999',
+    color: theme.colors.textSecondary,
     textAlign: 'center',
   },
 });

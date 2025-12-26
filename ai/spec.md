@@ -57,6 +57,28 @@ OpenAPI v3 file provided separately in `openapi.yaml`. Highlights:
 - Components: SheetViewer (ChordPro renderer), SetlistManager (drag-and-drop), ImportWizard, PATManager, TransposeControls.
 - Accessibility: WCAG 2.2 AA; font scaling 1.0–2.5x; high-contrast theme; labels.
 
+### 7.1 Theming System
+**ALL new pages and components MUST use the theme system:**
+- Import `useTheme` hook from `contexts/ThemeContext`
+- Call `const { theme } = useTheme()` in component
+- Create styles using `createStyles(theme)` function pattern
+- Use theme colors for ALL UI elements:
+  - `theme.colors.background` - screen backgrounds
+  - `theme.colors.surface` - cards, headers, modals
+  - `theme.colors.primary` - buttons, active states, links
+  - `theme.colors.text` - primary text
+  - `theme.colors.textSecondary` - secondary/muted text
+  - `theme.colors.border` - borders, dividers
+  - `theme.colors.error` - error states, delete actions
+  - `theme.colors.success` - success states
+  - `theme.colors.inputBackground` - text input backgrounds
+  - `theme.colors.tabBarBackground` - bottom tab bar
+  - `theme.colors.tabBarInactive` - inactive tab icons
+- Set `placeholderTextColor={theme.colors.textSecondary}` on ALL TextInput components
+- Use `color={theme.colors.primary}` for ActivityIndicator components
+- Theme modes: 'light', 'dark', 'system' (follows device)
+- Theme preference stored in backend preferences table
+
 ## 8. Workflows
 **Provider Import**
 1) User adds PAT → stored encrypted.

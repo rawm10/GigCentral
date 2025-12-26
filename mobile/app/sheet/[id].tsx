@@ -12,13 +12,17 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { sheetService } from '../../lib/services';
 import { Ionicons } from '@expo/vector-icons';
 import { KeepAwake } from 'expo-keep-awake';
+import { useTheme } from '../../contexts/ThemeContext';
 
 export default function SheetScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const queryClient = useQueryClient();
+  const { theme } = useTheme();
   const [performanceMode, setPerformanceMode] = useState(false);
   const [fontSize, setFontSize] = useState(16);
+  
+  const styles = createStyles(theme);
 
   const { data: sheet, isLoading } = useQuery({
     queryKey: ['sheet', id],
@@ -91,16 +95,16 @@ export default function SheetScreen() {
           
           <View style={styles.actions}>
             <TouchableOpacity onPress={() => router.push(`/sheet/${id}/edit`)} style={styles.actionButton}>
-              <Ionicons name="pencil-outline" size={20} color="#007AFF" />
+              <Ionicons name="pencil-outline" size={20} color={theme.colors.primary} />
             </TouchableOpacity>
             <TouchableOpacity onPress={() => handleTranspose(1)} style={styles.actionButton}>
-              <Ionicons name="arrow-up" size={20} color="#007AFF" />
+              <Ionicons name="arrow-up" size={20} color={theme.colors.primary} />
             </TouchableOpacity>
             <TouchableOpacity onPress={() => handleTranspose(-1)} style={styles.actionButton}>
-              <Ionicons name="arrow-down" size={20} color="#007AFF" />
+              <Ionicons name="arrow-down" size={20} color={theme.colors.primary} />
             </TouchableOpacity>
             <TouchableOpacity onPress={handleDelete} style={styles.actionButton}>
-              <Ionicons name="trash-outline" size={20} color="#FF3B30" />
+              <Ionicons name="trash-outline" size={20} color={theme.colors.error} />
             </TouchableOpacity>
           </View>
         </View>
@@ -146,20 +150,22 @@ function renderChordPro(body: string): string {
     .trim();
 }
 
-const styles = StyleSheet.create({
+const createStyles = (theme: any) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: theme.colors.background,
   },
   centerContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: theme.colors.background,
   },
   header: {
     padding: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
+    borderBottomColor: theme.colors.border,
+    backgroundColor: theme.colors.surface,
   },
   headerInfo: {
     marginBottom: 12,
@@ -168,10 +174,11 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: 'bold',
     marginBottom: 4,
+    color: theme.colors.text,
   },
   artist: {
     fontSize: 16,
-    color: '#666',
+    color: theme.colors.textSecondary,
     marginBottom: 8,
   },
   metadata: {
@@ -180,7 +187,7 @@ const styles = StyleSheet.create({
   },
   metaText: {
     fontSize: 14,
-    color: '#007AFF',
+    color: theme.colors.primary,
   },
   actions: {
     flexDirection: 'row',
@@ -199,14 +206,16 @@ const styles = StyleSheet.create({
     fontFamily: 'monospace',
     lineHeight: 24,
     padding: 16,
+    color: theme.colors.text,
   },
   footer: {
     padding: 16,
     borderTopWidth: 1,
-    borderTopColor: '#f0f0f0',
+    borderTopColor: theme.colors.border,
+    backgroundColor: theme.colors.surface,
   },
   performanceButton: {
-    backgroundColor: '#007AFF',
+    backgroundColor: theme.colors.primary,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',

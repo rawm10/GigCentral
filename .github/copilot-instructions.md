@@ -33,14 +33,63 @@ StageReady (formerly ChordKeeper) is a mobile app for organizing chord sheets in
 - Preferences: `/api/v1/preferences`
 
 ## Mobile App Structure
-- `mobile/app/_layout.tsx`: Root layout with QueryClientProvider and AuthProvider
+- `mobile/app/_layout.tsx`: Root layout with QueryClientProvider, AuthProvider, and ThemeProvider
 - `mobile/app/index.tsx`: Auth routing (redirects to login or library)
 - `mobile/app/(tabs)/`: Bottom tab navigation (library, setlists, settings)
 - `mobile/app/sheet/[id].tsx`: Sheet viewer with transpose, edit, delete
 - `mobile/app/import.tsx`: Import sheets with title, artist, key fields
 - `mobile/contexts/AuthContext.tsx`: Authentication state management
+- `mobile/contexts/ThemeContext.tsx`: Theme state management (light/dark/system modes)
 - `mobile/lib/services.ts`: API service layer
 - `mobile/lib/api.ts`: Axios configuration
+
+## Theming System (REQUIRED for all new UI)
+**Every new page and component MUST use the theme system:**
+
+```typescript
+import { useTheme } from '../contexts/ThemeContext';
+
+export default function MyScreen() {
+  const { theme } = useTheme();
+  const styles = createStyles(theme);
+  // ... component code
+}
+
+const createStyles = (theme: any) => StyleSheet.create({
+  container: {
+    backgroundColor: theme.colors.background,
+  },
+  text: {
+    color: theme.colors.text,
+  },
+  // ... more styles
+});
+```
+
+### Theme Color Properties (use these exclusively):
+- `theme.colors.background` - Main screen backgrounds
+- `theme.colors.surface` - Cards, headers, modals, elevated surfaces
+- `theme.colors.primary` - Buttons, links, active states, FABs
+- `theme.colors.text` - Primary text color
+- `theme.colors.textSecondary` - Secondary/muted text, labels
+- `theme.colors.border` - Borders, dividers, separators
+- `theme.colors.error` - Error states, delete/destructive actions
+- `theme.colors.success` - Success states, confirmations
+- `theme.colors.inputBackground` - TextInput backgrounds
+- `theme.colors.tabBarBackground` - Bottom tab bar background
+- `theme.colors.tabBarInactive` - Inactive tab icons
+
+### Required for ALL Components:
+- TextInput: `placeholderTextColor={theme.colors.textSecondary}`
+- ActivityIndicator: `color={theme.colors.primary}`
+- Switch: `trackColor={{ false: theme.colors.border, true: theme.colors.primary }}`
+- Icons: Use `theme.colors.primary` for interactive, `theme.colors.border` for inactive
+
+### Theme Modes:
+- **light**: Light theme colors
+- **dark**: Dark theme colors  
+- **system**: Automatically follows device theme preference (default)
+- User preference stored in backend `preferences.theme` field
 
 ## ChordPro Format
 - Metadata: `{title: ...}`, `{artist: ...}`, `{key: ...}`, `{capo: ...}`
@@ -69,6 +118,8 @@ StageReady (formerly ChordKeeper) is a mobile app for organizing chord sheets in
 - ✅ Transpose functionality with chord bracketing
 - ✅ Directory (setlist) creation
 - ✅ Performance mode with screen wake-lock
+- ✅ Light/Dark/System theme switching across all pages
+- ✅ Theme preferences stored in backend
 
 ### In Progress
 - Directory/setlist management UI

@@ -11,10 +11,14 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
 import { directoryService, setlistService } from '../../lib/services';
 import { Ionicons } from '@expo/vector-icons';
+import { useTheme } from '../../contexts/ThemeContext';
 
 export default function DirectoryScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
+  const { theme } = useTheme();
+  
+  const styles = createStyles(theme);
 
   const { data: directory, isLoading: directoryLoading } = useQuery({
     queryKey: ['directory', id],
@@ -31,7 +35,7 @@ export default function DirectoryScreen() {
   if (directoryLoading || setlistsLoading || !directory) {
     return (
       <View style={styles.centerContainer}>
-        <ActivityIndicator size="large" />
+        <ActivityIndicator size="large" color={theme.colors.primary} />
       </View>
     );
   }
@@ -53,19 +57,19 @@ export default function DirectoryScreen() {
             style={styles.setlistItem}
             onPress={() => router.push(`/setlist/${item.id}`)}
           >
-            <Ionicons name="list" size={24} color="#007AFF" />
+            <Ionicons name="list" size={24} color={theme.colors.primary} />
             <View style={styles.setlistInfo}>
               <Text style={styles.setlistName}>{item.name}</Text>
               <Text style={styles.setlistCount}>
                 {item.items?.length || 0} song{item.items?.length !== 1 ? 's' : ''}
               </Text>
             </View>
-            <Ionicons name="chevron-forward" size={20} color="#ccc" />
+            <Ionicons name="chevron-forward" size={20} color={theme.colors.border} />
           </TouchableOpacity>
         )}
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
-            <Ionicons name="musical-notes-outline" size={64} color="#ccc" />
+            <Ionicons name="musical-notes-outline" size={64} color={theme.colors.border} />
             <Text style={styles.emptyText}>No setlists yet</Text>
             <Text style={styles.emptySubtext}>Create a setlist to organize your songs</Text>
           </View>
@@ -82,30 +86,32 @@ export default function DirectoryScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (theme: any) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: theme.colors.background,
   },
   centerContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: theme.colors.background,
   },
   header: {
     padding: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
-    backgroundColor: '#f9f9f9',
+    borderBottomColor: theme.colors.border,
+    backgroundColor: theme.colors.surface,
   },
   title: {
     fontSize: 24,
     fontWeight: '700',
     marginBottom: 4,
+    color: theme.colors.text,
   },
   description: {
     fontSize: 14,
-    color: '#666',
+    color: theme.colors.textSecondary,
   },
   emptyContainer: {
     alignItems: 'center',
@@ -117,11 +123,11 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: '600',
     marginTop: 16,
-    color: '#666',
+    color: theme.colors.textSecondary,
   },
   emptySubtext: {
     fontSize: 14,
-    color: '#999',
+    color: theme.colors.textSecondary,
     marginTop: 8,
     textAlign: 'center',
   },
@@ -130,7 +136,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
+    borderBottomColor: theme.colors.border,
+    backgroundColor: theme.colors.surface,
   },
   setlistInfo: {
     flex: 1,
@@ -140,10 +147,11 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     marginBottom: 4,
+    color: theme.colors.text,
   },
   setlistCount: {
     fontSize: 14,
-    color: '#666',
+    color: theme.colors.textSecondary,
   },
   fab: {
     position: 'absolute',
@@ -152,7 +160,7 @@ const styles = StyleSheet.create({
     width: 56,
     height: 56,
     borderRadius: 28,
-    backgroundColor: '#007AFF',
+    backgroundColor: theme.colors.primary,
     justifyContent: 'center',
     alignItems: 'center',
     elevation: 4,

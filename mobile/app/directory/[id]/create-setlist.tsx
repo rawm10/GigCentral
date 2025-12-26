@@ -13,6 +13,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { sheetService, setlistService } from '../../../lib/services';
 import { Ionicons } from '@expo/vector-icons';
+import { useTheme } from '../../../contexts/ThemeContext';
 
 export default function CreateSetlistScreen() {
   const { id: directoryId } = useLocalSearchParams<{ id: string }>();
@@ -22,6 +23,9 @@ export default function CreateSetlistScreen() {
   
   const router = useRouter();
   const queryClient = useQueryClient();
+  const { theme } = useTheme();
+  
+  const styles = createStyles(theme);
 
   const { data: sheets, isLoading } = useQuery({
     queryKey: ['sheets'],
@@ -101,6 +105,7 @@ export default function CreateSetlistScreen() {
         <TextInput
           style={styles.input}
           placeholder="e.g., Sunday Service, Wedding Ceremony"
+          placeholderTextColor={theme.colors.textSecondary}
           value={name}
           onChangeText={setName}
         />
@@ -110,16 +115,17 @@ export default function CreateSetlistScreen() {
         </Text>
 
         <View style={styles.searchContainer}>
-          <Ionicons name="search" size={20} color="#999" style={styles.searchIcon} />
+          <Ionicons name="search" size={20} color={theme.colors.textSecondary} style={styles.searchIcon} />
           <TextInput
             style={styles.searchInput}
             placeholder="Search by title, artist, or key..."
+            placeholderTextColor={theme.colors.textSecondary}
             value={searchQuery}
             onChangeText={setSearchQuery}
           />
           {searchQuery.length > 0 && (
             <TouchableOpacity onPress={() => setSearchQuery('')}>
-              <Ionicons name="close-circle" size={20} color="#999" />
+              <Ionicons name="close-circle" size={20} color={theme.colors.textSecondary} />
             </TouchableOpacity>
           )}
         </View>
@@ -136,7 +142,7 @@ export default function CreateSetlistScreen() {
               <Ionicons
                 name={selectedSheets.has(item.id) ? 'checkbox' : 'square-outline'}
                 size={24}
-                color={selectedSheets.has(item.id) ? '#007AFF' : '#ccc'}
+                color={selectedSheets.has(item.id) ? theme.colors.primary : theme.colors.border}
               />
               <View style={styles.sheetInfo}>
                 <Text style={styles.sheetTitle}>{item.title}</Text>
@@ -181,15 +187,16 @@ export default function CreateSetlistScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (theme: any) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: theme.colors.background,
   },
   centerContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: theme.colors.background,
   },
   content: {
     flex: 1,
@@ -200,32 +207,34 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     marginBottom: 8,
     marginTop: 16,
-    color: '#333',
+    color: theme.colors.text,
   },
   input: {
     borderWidth: 1,
-    borderColor: '#ddd',
+    borderColor: theme.colors.border,
+    backgroundColor: theme.colors.surface,
     borderRadius: 8,
     padding: 12,
     fontSize: 16,
+    color: theme.colors.text,
   },
   sectionTitle: {
     fontSize: 18,
     fontWeight: '600',
     marginTop: 24,
     marginBottom: 12,
-    color: '#333',
+    color: theme.colors.text,
   },
   searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#ddd',
+    borderColor: theme.colors.border,
     borderRadius: 8,
     paddingHorizontal: 12,
     paddingVertical: 8,
     marginBottom: 12,
-    backgroundColor: '#f9f9f9',
+    backgroundColor: theme.colors.surface,
   },
   searchIcon: {
     marginRight: 8,
@@ -233,13 +242,14 @@ const styles = StyleSheet.create({
   searchInput: {
     flex: 1,
     fontSize: 16,
+    color: theme.colors.text,
   },
   sheetItem: {
     flexDirection: 'row',
     alignItems: 'center',
     padding: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
+    borderBottomColor: theme.colors.border,
   },
   sheetInfo: {
     flex: 1,
@@ -249,13 +259,14 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     marginBottom: 4,
+    color: theme.colors.text,
   },
   sheetArtist: {
     fontSize: 14,
-    color: '#666',
+    color: theme.colors.textSecondary,
   },
   keyBadge: {
-    backgroundColor: '#007AFF',
+    backgroundColor: theme.colors.primary,
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 4,
@@ -272,37 +283,38 @@ const styles = StyleSheet.create({
   emptyText: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#666',
+    color: theme.colors.textSecondary,
   },
   emptySubtext: {
     fontSize: 14,
-    color: '#999',
+    color: theme.colors.textSecondary,
     marginTop: 4,
   },
   footer: {
     flexDirection: 'row',
     padding: 16,
     borderTopWidth: 1,
-    borderTopColor: '#f0f0f0',
+    borderTopColor: theme.colors.border,
     gap: 12,
+    backgroundColor: theme.colors.surface,
   },
   cancelButton: {
     flex: 1,
     padding: 16,
     borderRadius: 8,
-    backgroundColor: '#f0f0f0',
+    backgroundColor: theme.colors.inputBackground,
     alignItems: 'center',
   },
   cancelButtonText: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#666',
+    color: theme.colors.textSecondary,
   },
   createButton: {
     flex: 1,
     padding: 16,
     borderRadius: 8,
-    backgroundColor: '#007AFF',
+    backgroundColor: theme.colors.primary,
     alignItems: 'center',
   },
   createButtonDisabled: {

@@ -12,6 +12,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { setlistService, sheetService } from '../../lib/services';
+import { useTheme } from '../../contexts/ThemeContext';
 
 interface SetlistItem {
   id: string;
@@ -25,6 +26,9 @@ interface SetlistItem {
 export default function SetlistDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const queryClient = useQueryClient();
+  const { theme } = useTheme();
+  
+  const styles = createStyles(theme);
 
   const { data: setlist, isLoading } = useQuery({
     queryKey: ['setlist', id],
@@ -97,14 +101,14 @@ export default function SetlistDetailScreen() {
             disabled={index === 0 || reorderMutation.isPending}
             style={[styles.arrowButton, index === 0 && styles.arrowButtonDisabled]}
           >
-            <Ionicons name="chevron-up" size={20} color={index === 0 ? '#ccc' : '#007AFF'} />
+            <Ionicons name="chevron-up" size={20} color={index === 0 ? theme.colors.border : theme.colors.primary} />
           </TouchableOpacity>
           <TouchableOpacity
             onPress={() => handleMoveDown(index)}
             disabled={index === (setlist?.items?.length ?? 0) - 1 || reorderMutation.isPending}
             style={[styles.arrowButton, index === (setlist?.items?.length ?? 0) - 1 && styles.arrowButtonDisabled]}
           >
-            <Ionicons name="chevron-down" size={20} color={index === (setlist?.items?.length ?? 0) - 1 ? '#ccc' : '#007AFF'} />
+            <Ionicons name="chevron-down" size={20} color={index === (setlist?.items?.length ?? 0) - 1 ? theme.colors.border : theme.colors.primary} />
           </TouchableOpacity>
         </View>
 
@@ -130,7 +134,7 @@ export default function SetlistDetailScreen() {
           disabled={removeItemMutation.isPending}
           style={styles.removeButton}
         >
-          <Ionicons name="trash-outline" size={20} color="#FF3B30" />
+          <Ionicons name="trash-outline" size={20} color={theme.colors.error} />
         </TouchableOpacity>
       </View>
     );
@@ -139,7 +143,7 @@ export default function SetlistDetailScreen() {
   if (isLoading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#007AFF" />
+        <ActivityIndicator size="large" color={theme.colors.primary} />
       </View>
     );
   }
@@ -158,20 +162,20 @@ export default function SetlistDetailScreen() {
     <View style={styles.container}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-          <Ionicons name="arrow-back" size={24} color="#007AFF" />
+          <Ionicons name="arrow-back" size={24} color={theme.colors.primary} />
         </TouchableOpacity>
         <View style={styles.headerInfo}>
           <Text style={styles.title}>{setlist.name}</Text>
           <Text style={styles.subtitle}>{items.length} songs</Text>
         </View>
         <TouchableOpacity onPress={handleAddSongs} style={styles.addButton}>
-          <Ionicons name="add" size={24} color="#007AFF" />
+          <Ionicons name="add" size={24} color={theme.colors.primary} />
         </TouchableOpacity>
       </View>
 
       {items.length === 0 ? (
         <View style={styles.emptyContainer}>
-          <Ionicons name="musical-notes-outline" size={64} color="#ccc" />
+          <Ionicons name="musical-notes-outline" size={64} color={theme.colors.border} />
           <Text style={styles.emptyText}>No songs in this setlist</Text>
           <TouchableOpacity onPress={handleAddSongs} style={styles.emptyButton}>
             <Text style={styles.emptyButtonText}>Add Songs</Text>
@@ -189,26 +193,26 @@ export default function SetlistDetailScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (theme: any) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: theme.colors.background,
   },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#fff',
+    backgroundColor: theme.colors.background,
   },
   errorContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#fff',
+    backgroundColor: theme.colors.background,
   },
   errorText: {
     fontSize: 16,
-    color: '#999',
+    color: theme.colors.textSecondary,
   },
   header: {
     flexDirection: 'row',
@@ -216,8 +220,9 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     padding: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
+    borderBottomColor: theme.colors.border,
     paddingTop: 50,
+    backgroundColor: theme.colors.surface,
   },
   backButton: {
     padding: 8,
@@ -232,11 +237,11 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#333',
+    color: theme.colors.text,
   },
   subtitle: {
     fontSize: 14,
-    color: '#666',
+    color: theme.colors.textSecondary,
     marginTop: 2,
   },
   listContent: {
@@ -245,7 +250,7 @@ const styles = StyleSheet.create({
   songItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#f5f5f5',
+    backgroundColor: theme.colors.surface,
     borderRadius: 8,
     marginBottom: 8,
     padding: 12,
@@ -264,7 +269,7 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: '#007AFF',
+    backgroundColor: theme.colors.primary,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,
@@ -280,16 +285,16 @@ const styles = StyleSheet.create({
   songTitle: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#333',
+    color: theme.colors.text,
   },
   songArtist: {
     fontSize: 14,
-    color: '#666',
+    color: theme.colors.textSecondary,
     marginTop: 2,
   },
   songKey: {
     fontSize: 12,
-    color: '#999',
+    color: theme.colors.textSecondary,
     marginTop: 2,
   },
   removeButton: {
@@ -301,12 +306,12 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     fontSize: 16,
-    color: '#999',
+    color: theme.colors.textSecondary,
     marginTop: 16,
     marginBottom: 24,
   },
   emptyButton: {
-    backgroundColor: '#007AFF',
+    backgroundColor: theme.colors.primary,
     paddingHorizontal: 24,
     paddingVertical: 12,
     borderRadius: 8,

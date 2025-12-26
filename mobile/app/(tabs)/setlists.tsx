@@ -11,18 +11,22 @@ import { useRouter } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
 import { directoryService } from '../../lib/services';
 import { Ionicons } from '@expo/vector-icons';
+import { useTheme } from '../../contexts/ThemeContext';
 
 export default function SetlistsScreen() {
   const router = useRouter();
+  const { theme } = useTheme();
   const { data: directories, isLoading } = useQuery({
     queryKey: ['directories'],
     queryFn: () => directoryService.getDirectories(),
   });
 
+  const styles = createStyles(theme);
+
   if (isLoading) {
     return (
       <View style={styles.centerContainer}>
-        <ActivityIndicator size="large" />
+        <ActivityIndicator size="large" color={theme.colors.primary} />
       </View>
     );
   }
@@ -37,7 +41,7 @@ export default function SetlistsScreen() {
             style={styles.directoryItem}
             onPress={() => router.push(`/directory/${item.id}`)}
           >
-            <Ionicons name="folder" size={24} color="#007AFF" />
+            <Ionicons name="folder" size={24} color={theme.colors.primary} />
             <View style={styles.directoryInfo}>
               <Text style={styles.directoryName}>{item.name}</Text>
               {item.description && (
@@ -46,12 +50,12 @@ export default function SetlistsScreen() {
                 </Text>
               )}
             </View>
-            <Ionicons name="chevron-forward" size={20} color="#ccc" />
+            <Ionicons name="chevron-forward" size={20} color={theme.colors.border} />
           </TouchableOpacity>
         )}
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
-            <Ionicons name="folder-open-outline" size={64} color="#ccc" />
+            <Ionicons name="folder-open-outline" size={64} color={theme.colors.border} />
             <Text style={styles.emptyText}>No gigs yet</Text>
             <Text style={styles.emptySubtext}>Create a directory to organize your setlists</Text>
           </View>
@@ -68,22 +72,24 @@ export default function SetlistsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (theme: any) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: theme.colors.background,
   },
   centerContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: theme.colors.background,
   },
   directoryItem: {
     flexDirection: 'row',
     alignItems: 'center',
     padding: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
+    borderBottomColor: theme.colors.border,
+    backgroundColor: theme.colors.surface,
   },
   directoryInfo: {
     flex: 1,
@@ -93,10 +99,11 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     marginBottom: 4,
+    color: theme.colors.text,
   },
   directoryDescription: {
     fontSize: 14,
-    color: '#666',
+    color: theme.colors.textSecondary,
   },
   emptyContainer: {
     alignItems: 'center',
@@ -108,11 +115,11 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: '600',
     marginTop: 16,
-    color: '#666',
+    color: theme.colors.textSecondary,
   },
   emptySubtext: {
     fontSize: 14,
-    color: '#999',
+    color: theme.colors.textSecondary,
     marginTop: 8,
     textAlign: 'center',
   },
@@ -123,7 +130,7 @@ const styles = StyleSheet.create({
     width: 56,
     height: 56,
     borderRadius: 28,
-    backgroundColor: '#007AFF',
+    backgroundColor: theme.colors.primary,
     justifyContent: 'center',
     alignItems: 'center',
     elevation: 4,

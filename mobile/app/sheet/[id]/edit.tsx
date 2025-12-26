@@ -14,17 +14,21 @@ import {
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { sheetService } from '../../../lib/services';
+import { useTheme } from '../../../contexts/ThemeContext';
 
 export default function EditSheetScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const queryClient = useQueryClient();
+  const { theme } = useTheme();
 
   const [title, setTitle] = useState('');
   const [artist, setArtist] = useState('');
   const [key, setKey] = useState('');
   const [body, setBody] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  
+  const styles = createStyles(theme);
 
   const { data: sheet, isLoading: isLoadingSheet } = useQuery({
     queryKey: ['sheet', id],
@@ -87,7 +91,7 @@ export default function EditSheetScreen() {
   if (isLoadingSheet) {
     return (
       <View style={styles.centerContainer}>
-        <ActivityIndicator size="large" />
+        <ActivityIndicator size="large" color={theme.colors.primary} />
       </View>
     );
   }
@@ -102,6 +106,7 @@ export default function EditSheetScreen() {
         <TextInput
           style={styles.input}
           placeholder="Enter song title"
+          placeholderTextColor={theme.colors.textSecondary}
           value={title}
           onChangeText={setTitle}
         />
@@ -110,6 +115,7 @@ export default function EditSheetScreen() {
         <TextInput
           style={styles.input}
           placeholder="Enter artist name"
+          placeholderTextColor={theme.colors.textSecondary}
           value={artist}
           onChangeText={setArtist}
         />
@@ -118,6 +124,7 @@ export default function EditSheetScreen() {
         <TextInput
           style={styles.input}
           placeholder="e.g., C, G, Am"
+          placeholderTextColor={theme.colors.textSecondary}
           value={key}
           onChangeText={setKey}
           autoCapitalize="characters"
@@ -127,6 +134,7 @@ export default function EditSheetScreen() {
         <TextInput
           style={styles.textArea}
           placeholder="Paste your chord sheet here..."
+          placeholderTextColor={theme.colors.textSecondary}
           value={body}
           onChangeText={setBody}
           multiline
@@ -157,15 +165,16 @@ export default function EditSheetScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (theme: any) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: theme.colors.background,
   },
   centerContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: theme.colors.background,
   },
   content: {
     padding: 16,
@@ -175,22 +184,27 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     marginBottom: 8,
     marginTop: 16,
+    color: theme.colors.text,
   },
   input: {
     borderWidth: 1,
-    borderColor: '#ddd',
+    borderColor: theme.colors.border,
+    backgroundColor: theme.colors.surface,
     borderRadius: 8,
     padding: 12,
     fontSize: 16,
+    color: theme.colors.text,
   },
   textArea: {
     borderWidth: 1,
-    borderColor: '#ddd',
+    borderColor: theme.colors.border,
+    backgroundColor: theme.colors.surface,
     borderRadius: 8,
     padding: 12,
     fontSize: 14,
     fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace',
     minHeight: 300,
+    color: theme.colors.text,
   },
   buttonContainer: {
     flexDirection: 'row',
@@ -205,10 +219,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   saveButton: {
-    backgroundColor: '#007AFF',
+    backgroundColor: theme.colors.primary,
   },
   cancelButton: {
-    backgroundColor: '#f0f0f0',
+    backgroundColor: theme.colors.inputBackground,
   },
   saveButtonText: {
     color: '#fff',
@@ -216,7 +230,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   cancelButtonText: {
-    color: '#333',
+    color: theme.colors.text,
     fontSize: 16,
     fontWeight: '600',
   },

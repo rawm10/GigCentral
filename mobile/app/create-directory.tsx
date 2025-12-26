@@ -13,6 +13,7 @@ import {
 import { useRouter } from 'expo-router';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { directoryService } from '../lib/services';
+import { useTheme } from '../contexts/ThemeContext';
 
 export default function CreateDirectoryScreen() {
   const [name, setName] = useState('');
@@ -20,6 +21,9 @@ export default function CreateDirectoryScreen() {
   
   const router = useRouter();
   const queryClient = useQueryClient();
+  const { theme } = useTheme();
+  
+  const styles = createStyles(theme);
 
   const createMutation = useMutation({
     mutationFn: (data: any) => directoryService.createDirectory(data),
@@ -54,6 +58,7 @@ export default function CreateDirectoryScreen() {
         <TextInput
           style={styles.input}
           placeholder="e.g., Wedding Gigs, Church Songs"
+          placeholderTextColor={theme.colors.textSecondary}
           value={name}
           onChangeText={setName}
         />
@@ -62,6 +67,7 @@ export default function CreateDirectoryScreen() {
         <TextInput
           style={styles.textArea}
           placeholder="Add a description..."
+          placeholderTextColor={theme.colors.textSecondary}
           value={description}
           onChangeText={setDescription}
           multiline
@@ -91,10 +97,10 @@ export default function CreateDirectoryScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (theme: any) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: theme.colors.background,
   },
   content: {
     flex: 1,
@@ -105,47 +111,52 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     marginBottom: 8,
     marginTop: 16,
-    color: '#333',
+    color: theme.colors.text,
   },
   input: {
     borderWidth: 1,
-    borderColor: '#ddd',
+    borderColor: theme.colors.border,
+    backgroundColor: theme.colors.surface,
     borderRadius: 8,
     padding: 12,
     fontSize: 16,
+    color: theme.colors.text,
   },
   textArea: {
     borderWidth: 1,
-    borderColor: '#ddd',
+    borderColor: theme.colors.border,
+    backgroundColor: theme.colors.surface,
     borderRadius: 8,
     padding: 12,
     fontSize: 16,
     minHeight: 100,
+    color: theme.colors.text,
   },
   footer: {
     flexDirection: 'row',
     padding: 16,
     borderTopWidth: 1,
-    borderTopColor: '#f0f0f0',
+    borderTopColor: theme.colors.border,
     gap: 12,
+    backgroundColor: theme.colors.background,
   },
   cancelButton: {
     flex: 1,
     padding: 16,
     borderRadius: 8,
-    backgroundColor: '#f0f0f0',
+    backgroundColor: theme.colors.inputBackground,
     alignItems: 'center',
   },
   cancelButtonText: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#666',
+    color: theme.colors.textSecondary,
   },
   createButton: {
     flex: 1,
     padding: 16,
     borderRadius: 8,
-    backgroundColor: '#007AFF',
+    backgroundColor: theme.colors.primary,
     alignItems: 'center',
   },
   createButtonDisabled: {

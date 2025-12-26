@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuth } from '../contexts/AuthContext';
+import { useTheme } from '../contexts/ThemeContext';
 
 export default function SignupScreen() {
   const [email, setEmail] = useState('');
@@ -18,7 +19,10 @@ export default function SignupScreen() {
   const [displayName, setDisplayName] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const { signup } = useAuth();
+  const { theme } = useTheme();
   const router = useRouter();
+  
+  const styles = createStyles(theme);
 
   const handleSignup = async () => {
     if (!email || !password) {
@@ -54,11 +58,12 @@ export default function SignupScreen() {
     >
       <View style={styles.content}>
         <Text style={styles.title}>Create Account</Text>
-        <Text style={styles.subtitle}>Join ChordKeeper today</Text>
+        <Text style={styles.subtitle}>Join StageReady today</Text>
 
         <TextInput
           style={styles.input}
           placeholder="Display Name (optional)"
+          placeholderTextColor={theme.colors.textSecondary}
           value={displayName}
           onChangeText={setDisplayName}
           autoCapitalize="words"
@@ -67,6 +72,7 @@ export default function SignupScreen() {
         <TextInput
           style={styles.input}
           placeholder="Email"
+          placeholderTextColor={theme.colors.textSecondary}
           value={email}
           onChangeText={setEmail}
           keyboardType="email-address"
@@ -77,6 +83,7 @@ export default function SignupScreen() {
         <TextInput
           style={styles.input}
           placeholder="Password (min 8 characters)"
+          placeholderTextColor={theme.colors.textSecondary}
           value={password}
           onChangeText={setPassword}
           secureTextEntry
@@ -101,10 +108,10 @@ export default function SignupScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (theme: any) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: theme.colors.background,
   },
   content: {
     flex: 1,
@@ -116,23 +123,26 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     marginBottom: 8,
     textAlign: 'center',
+    color: theme.colors.text,
   },
   subtitle: {
     fontSize: 16,
-    color: '#666',
+    color: theme.colors.textSecondary,
     marginBottom: 32,
     textAlign: 'center',
   },
   input: {
     borderWidth: 1,
-    borderColor: '#ddd',
+    borderColor: theme.colors.border,
+    backgroundColor: theme.colors.surface,
     borderRadius: 8,
     padding: 16,
     fontSize: 16,
     marginBottom: 16,
+    color: theme.colors.text,
   },
   button: {
-    backgroundColor: '#007AFF',
+    backgroundColor: theme.colors.primary,
     borderRadius: 8,
     padding: 16,
     alignItems: 'center',
@@ -147,7 +157,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   link: {
-    color: '#007AFF',
+    color: theme.colors.primary,
     textAlign: 'center',
     marginTop: 16,
     fontSize: 14,
