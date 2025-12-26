@@ -14,8 +14,16 @@ public class FormatterService : IFormatterService
         
         if (input.Contains("{title:") || input.Contains("{t:"))
         {
-            // Already in ChordPro format
-            return input;
+            // Already in ChordPro format, but ensure chords are bracketed line by line
+            var inputLines = input.Split('\n');
+            var result = new System.Text.StringBuilder();
+            
+            foreach (var inputLine in inputLines)
+            {
+                result.AppendLine(EnsureChordsAreBracketed(inputLine));
+            }
+            
+            return result.ToString().TrimEnd();
         }
 
         var lines = input.Split('\n');
@@ -23,16 +31,25 @@ public class FormatterService : IFormatterService
         
         // Try to detect title from first non-empty line
         var firstLine = lines.FirstOrDefault(l => !string.IsNullOrWhiteSpace(l));
-        if (firstLine != null)
+        if (firstLine != null && !firstLine.StartsWith("{title:"))
         {
             output.AppendLine($"{{title: {firstLine.Trim()}}}");
         }
 
-        foreach (var line in lines.Skip(1))
+        for (int i = 0; i < lines.Length; i++)
         {
+            var line = lines[i];
+            
             if (string.IsNullOrWhiteSpace(line))
             {
                 output.AppendLine();
+                continue;
+            }
+
+            // Skip metadata lines
+            if (line.StartsWith("{"))
+            {
+                output.AppendLine(line);
                 continue;
             }
 
@@ -40,20 +57,70 @@ public class FormatterService : IFormatterService
             if (IsChordLine(line))
             {
                 // Convert chord line to inline chords
-                var nextLineIdx = Array.IndexOf(lines, line) + 1;
-                if (nextLineIdx < lines.Length)
+                if (i + 1 < lines.Length)
                 {
-                    var lyricLine = lines[nextLineIdx];
+                    var lyricLine = lines[i + 1];
                     output.AppendLine(MergeChordAndLyrics(line, lyricLine));
+                    i++; // Skip the lyric line since we merged it
+                }
+                else
+                {
+                    // Chord line without lyrics
+                    output.AppendLine(BracketChords(line));
                 }
             }
-            else if (!IsChordLine(lines.ElementAtOrDefault(Array.IndexOf(lines, line) - 1)))
+            else
             {
-                output.AppendLine(line);
+                // Regular line - check if it has inline chords
+                output.AppendLine(EnsureChordsAreBracketed(line));
             }
         }
 
         return output.ToString();
+    }
+
+    private static string EnsureChordsAreBracketed(string line)
+    {
+        // Skip metadata lines (ChordPro directives like {title: ...}, {artist: ...})
+        if (line.TrimStart().StartsWith("{"))
+        {
+            return line;
+        }
+        
+        // Find standalone chords (not already in brackets) and wrap them
+        // Matches: C, Am, D7, Gsus4, c, am, etc. (case insensitive) but not [C], [Am], etc.
+        var chordPattern = new Regex(@"(?<!\[)\b([A-Ga-g][#b]?(?:maj|min|m|M|sus|dim|aug|add)?[0-9]*)(?!\])", RegexOptions.IgnoreCase);
+        return chordPattern.Replace(line, match => 
+        {
+            var chord = match.Groups[1].Value;
+            // Capitalize first letter
+            if (chord.Length > 0)
+            {
+                chord = char.ToUpper(chord[0]) + chord.Substring(1);
+            }
+            return $"[{chord}]";
+        });
+    }
+
+    private static string BracketChords(string line)
+    {
+        // Skip metadata lines
+        if (line.TrimStart().StartsWith("{"))
+        {
+            return line;
+        }
+        
+        var chordPattern = new Regex(@"\b([A-Ga-g][#b]?(?:maj|min|m|M|sus|dim|aug|add)?[0-9]*)\b", RegexOptions.IgnoreCase);
+        return chordPattern.Replace(line, match =>
+        {
+            var chord = match.Groups[1].Value;
+            // Capitalize first letter
+            if (chord.Length > 0)
+            {
+                chord = char.ToUpper(chord[0]) + chord.Substring(1);
+            }
+            return $"[{chord}]";
+        });
     }
 
     public async Task<string> FormatForViewportAsync(string chordPro, ViewportInfo? viewport, FormatOptions? options)
@@ -151,13 +218,24 @@ public class FormatterService : IFormatterService
     private static string TransposeChord(string chord, int semitones)
     {
         var notes = new[] { "C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B" };
+        var flats = new Dictionary<string, string>
+        {
+            ["Db"] = "C#", ["Eb"] = "D#", ["Gb"] = "F#", ["Ab"] = "G#", ["Bb"] = "A#"
+        };
+        
         var notePattern = new Regex(@"^([A-G][#b]?)(.*)$");
         var match = notePattern.Match(chord);
         
         if (!match.Success) return chord;
         
-        var note = match.Groups[1].Value.Replace("b", "#");
+        var note = match.Groups[1].Value;
         var suffix = match.Groups[2].Value;
+        
+        // Convert flats to sharps
+        if (flats.TryGetValue(note, out var sharpNote))
+        {
+            note = sharpNote;
+        }
         
         var index = Array.IndexOf(notes, note);
         if (index == -1) return chord;

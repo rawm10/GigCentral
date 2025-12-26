@@ -108,8 +108,8 @@ export const sheetService = {
 
   async transposeSheet(id: string, semitones: number, useNashville: boolean = false) {
     const response = await api.post(`/sheets/${id}/transpose`, {
-      semitones,
-      useNashville,
+      Semitones: semitones,
+      UseNashville: useNashville,
     });
     return response.data;
   },

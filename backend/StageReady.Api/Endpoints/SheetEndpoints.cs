@@ -68,16 +68,20 @@ public static class SheetEndpoints
         group.MapPost("/import", async (
             [FromBody] ImportSheetRequest request,
             HttpContext context,
-            ISheetService sheetService) =>
+            ISheetService sheetService,
+            ILogger<Program> logger) =>
         {
             try
             {
                 var userId = GetUserId(context);
+                logger.LogInformation("Import request - SourceType: {SourceType}, HasBody: {HasBody}, Provider: {Provider}", 
+                    request.SourceType, !string.IsNullOrEmpty(request.Body), request.ProviderName);
                 var sheet = await sheetService.ImportSheetAsync(request, userId);
                 return Results.Created($"/api/v1/sheets/{sheet.Id}", sheet);
             }
             catch (Exception ex)
             {
+                logger.LogError(ex, "Failed to import sheet");
                 return Results.UnprocessableEntity(new { error = ex.Message });
             }
         });
@@ -121,7 +125,27 @@ public static class SheetEndpoints
 
     private static Guid GetUserId(HttpContext context)
     {
+        // Try standard claim first
         var userIdClaim = context.User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
-        return Guid.Parse(userIdClaim ?? throw new UnauthorizedAccessException());
+        
+        // Fallback to claim type variations
+        if (string.IsNullOrEmpty(userIdClaim))
+        {
+            userIdClaim = context.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        }
+        
+        if (string.IsNullOrEmpty(userIdClaim))
+        {
+            userIdClaim = context.User.FindFirst("sub")?.Value;
+        }
+        
+        if (string.IsNullOrEmpty(userIdClaim))
+        {
+            // Log all available claims for debugging
+            var claims = string.Join(", ", context.User.Claims.Select(c => $"{c.Type}={c.Value}"));
+            throw new UnauthorizedAccessException($"User ID claim not found. Available claims: {claims}");
+        }
+        
+        return Guid.Parse(userIdClaim);
     }
 }

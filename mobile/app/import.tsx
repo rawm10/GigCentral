@@ -33,8 +33,13 @@ export default function ImportScreen() {
   });
 
   const handleImport = async () => {
+    if (!title.trim()) {
+      Alert.alert('Error', 'Please enter a song title');
+      return;
+    }
+    
     if (!body.trim()) {
-      Alert.alert('Error', 'Please enter the song content');
+      Alert.alert('Error', 'Please enter the chord sheet content');
       return;
     }
 
@@ -42,7 +47,7 @@ export default function ImportScreen() {
     try {
       await importMutation.mutateAsync({
         sourceType: 'text',
-        body: body.trim(),
+        body: `{title: ${title}}\n${artist ? `{artist: ${artist}}\n` : ''}${key ? `{key: ${key}}\n` : ''}${body.trim()}`,
       });
     } catch (error: any) {
       Alert.alert('Import Failed', error.response?.data?.error || 'Unable to import sheet');
@@ -57,7 +62,32 @@ export default function ImportScreen() {
       style={styles.container}
     >
       <ScrollView style={styles.content}>
-        <Text style={styles.label}>Song Content *</Text>
+        <Text style={styles.label}>Song Title *</Text>
+        <TextInput
+          style={styles.input}
+          placeholder="Enter song title"
+          value={title}
+          onChangeText={setTitle}
+        />
+
+        <Text style={styles.label}>Artist (Optional)</Text>
+        <TextInput
+          style={styles.input}
+          placeholder="Enter artist name"
+          value={artist}
+          onChangeText={setArtist}
+        />
+
+        <Text style={styles.label}>Key (Optional)</Text>
+        <TextInput
+          style={styles.input}
+          placeholder="e.g., C, G, Am"
+          value={key}
+          onChangeText={setKey}
+          autoCapitalize="characters"
+        />
+
+        <Text style={styles.label}>Chord Sheet Content *</Text>
         <TextInput
           style={styles.textArea}
           placeholder="Paste your chord sheet here..."

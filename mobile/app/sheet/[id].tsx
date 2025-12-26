@@ -29,8 +29,13 @@ export default function SheetScreen() {
   const transposeMutation = useMutation({
     mutationFn: ({ semitones, useNashville }: { semitones: number; useNashville: boolean }) =>
       sheetService.transposeSheet(id!, semitones, useNashville),
-    onSuccess: () => {
+    onSuccess: (data) => {
+      console.log('Transpose success, new data:', data);
       queryClient.invalidateQueries({ queryKey: ['sheet', id] });
+    },
+    onError: (error) => {
+      console.error('Transpose error:', error);
+      Alert.alert('Transpose Failed', 'Unable to transpose sheet');
     },
   });
 
@@ -85,6 +90,9 @@ export default function SheetScreen() {
           </View>
           
           <View style={styles.actions}>
+            <TouchableOpacity onPress={() => router.push(`/sheet/${id}/edit`)} style={styles.actionButton}>
+              <Ionicons name="pencil-outline" size={20} color="#007AFF" />
+            </TouchableOpacity>
             <TouchableOpacity onPress={() => handleTranspose(1)} style={styles.actionButton}>
               <Ionicons name="arrow-up" size={20} color="#007AFF" />
             </TouchableOpacity>
@@ -129,10 +137,13 @@ export default function SheetScreen() {
 function renderChordPro(body: string): string {
   // Basic ChordPro rendering - in production, use a proper parser
   return body
-    .replace(/\{title:\s*(.+?)\}/g, '')
-    .replace(/\{artist:\s*(.+?)\}/g, '')
-    .replace(/\{key:\s*(.+?)\}/g, '')
-    .replace(/\[([^\]]+)\]/g, '$1'); // Display chords inline for now
+    .replace(/\{title:\s*(.+?)\}/gi, '')
+    .replace(/\{artist:\s*(.+?)\}/gi, '')
+    .replace(/\{key:\s*(.+?)\}/gi, '')
+    .replace(/\{capo:\s*(.+?)\}/gi, '')
+    .replace(/^\s*$/gm, '') // Remove empty lines
+    .replace(/\[([^\]]+)\]/g, '$1') // Display chords inline for now
+    .trim();
 }
 
 const styles = StyleSheet.create({

@@ -216,20 +216,20 @@ public class SheetService : ISheetService
 
     private static string? ExtractTitle(string chordPro)
     {
-        var match = System.Text.RegularExpressions.Regex.Match(chordPro, @"\{title:\s*(.+?)\}");
-        return match.Success ? match.Groups[1].Value : null;
+        var match = System.Text.RegularExpressions.Regex.Match(chordPro, @"\{title:\s*(.+?)\}", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+        return match.Success ? match.Groups[1].Value.Trim() : null;
     }
 
     private static string? ExtractArtist(string chordPro)
     {
-        var match = System.Text.RegularExpressions.Regex.Match(chordPro, @"\{artist:\s*(.+?)\}");
-        return match.Success ? match.Groups[1].Value : null;
+        var match = System.Text.RegularExpressions.Regex.Match(chordPro, @"\{artist:\s*(.+?)\}", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+        return match.Success ? match.Groups[1].Value.Trim() : null;
     }
 
     private static string? ExtractKey(string chordPro)
     {
-        var match = System.Text.RegularExpressions.Regex.Match(chordPro, @"\{key:\s*(.+?)\}");
-        return match.Success ? match.Groups[1].Value : null;
+        var match = System.Text.RegularExpressions.Regex.Match(chordPro, @"\{key:\s*(.+?)\}", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+        return match.Success ? match.Groups[1].Value.Trim() : null;
     }
 
     private static string TransposeKey(string key, int semitones)
