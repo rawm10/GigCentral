@@ -111,8 +111,7 @@ jobs:
             fi
             
             # Create AI prompt for coverage-driven test generation
-            cat > prompt.txt << PROMPT
-You are a senior software engineer writing comprehensive unit tests to achieve 90% code coverage.
+            PROMPT_TEXT="You are a senior software engineer writing comprehensive unit tests to achieve 90% code coverage.
 
 TASK: ${ACTION} unit test file for: $file
 TEST FILE: $TEST_FILE
@@ -129,18 +128,24 @@ REQUIREMENTS:
 SOURCE CODE TO COVER:
 \`\`\`
 $CONTENT
+\`\`\`"
+
+            if [ -n "$EXISTING_TEST" ]; then
+              PROMPT_TEXT="$PROMPT_TEXT
+
+EXISTING TEST FILE (currently has gaps in coverage):
+\`\`\`
+$EXISTING_TEST
 \`\`\`
 
-$(if [ -n "$EXISTING_TEST" ]; then
-  echo "EXISTING TEST FILE (currently has gaps in coverage):"
-  echo "\`\`\`"
-  echo "$EXISTING_TEST"
-  echo "\`\`\`"
-  echo ""
-  echo "EXPAND the existing tests to cover ALL untested code paths. Add new test cases to reach 90% coverage."
-else
-  echo "CREATE a comprehensive test file covering all exported functionality."
-fi)
+EXPAND the existing tests to cover ALL untested code paths. Add new test cases to reach 90% coverage."
+            else
+              PROMPT_TEXT="$PROMPT_TEXT
+
+CREATE a comprehensive test file covering all exported functionality."
+            fi
+
+            PROMPT_TEXT="$PROMPT_TEXT
 
 ANALYSIS REQUIRED:
 1. Identify all testable code paths in the source
@@ -148,8 +153,9 @@ ANALYSIS REQUIRED:
 3. Generate tests for untested paths
 4. Ensure 90%+ coverage
 
-OUTPUT: Provide ONLY the complete test file code (no explanations, no markdown code fences, just raw code).
-PROMPT
+OUTPUT: Provide ONLY the complete test file code (no explanations, no markdown code fences, just raw code)."
+            
+            echo "$PROMPT_TEXT" > prompt.txt
             
             # Call GitHub Models API (using GPT-4)
             RESPONSE=$(curl -s -X POST "https://models.inference.ai.azure.com/chat/completions" \
