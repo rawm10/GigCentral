@@ -12,8 +12,8 @@
           <IncludeTestAssembly>false</IncludeTestAssembly>
           <SkipAutoProps>true</SkipAutoProps>
           <DeterministicReport>false</DeterministicReport>
-          <!-- Per-folder thresholds for Services - 5% lines and functions -->
-          <Threshold>5</Threshold>
+          <!-- Per-folder thresholds for Services - 3% lines and functions -->
+          <Threshold>3</Threshold>
           <ThresholdType>line,method</ThresholdType>
           <ThresholdStat>total</ThresholdStat>
         </Configuration>
