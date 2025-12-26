@@ -16,7 +16,7 @@ StageReady is a cross-platform mobile application (iOS/Android) for musicians to
 - **Offline-First**: Full functionality without internet connection
 - **Cloud Sync**: Access your library across devices
 
-### Phase 2: Gig Marketplace (Planned - See [phase2_gig_marketplace.md](ai/phase2_gig_marketplace.md))
+### Phase 2: Gig Marketplace
 - **Gig Discovery**: Browse and search local gig opportunities by location, genre, and date
 - **Smart Matching**: AI-powered recommendations based on your setlists and preferences
 - **One-Tap Applications**: Apply to gigs using your existing setlists as portfolios
