@@ -109,83 +109,31 @@ jobs:
               ACTION="CREATE"
             fi
             
-            # Create AI prompt for coverage-driven test generation
-            cat > prompt.txt <<'EOF'
-You are a senior software engineer writing comprehensive unit tests to achieve 90% code coverage.
-EOF
+            # Build prompt
+            PROMPT="You are a test engineer. ${ACTION} comprehensive unit tests using ${FRAMEWORK} to achieve 90% coverage.
+
+SOURCE CODE:
+$CONTENT"
+
+            [ -n "$EXISTING_TEST" ] && PROMPT="$PROMPT
+
+EXISTING TESTS (expand these):
+$EXISTING_TEST"
+
+            PROMPT="$PROMPT
+
+OUTPUT: Complete test file code only, no markdown fences."
             
-            cat >> prompt.txt <<EOF
-
-TASK: ${ACTION} unit test file for: $file
-TEST FILE: $TEST_FILE
-FRAMEWORK: $FRAMEWORK
-GOAL: Achieve 90% line and function coverage for this file
-
-REQUIREMENTS:
-- Test ALL public methods/functions/exports
-- Cover edge cases, error scenarios, and happy paths
-- Mock all external dependencies (API calls, storage, context providers)
-- Follow existing test patterns in the codebase
-- Ensure tests are deterministic and isolated
-
-SOURCE CODE TO COVER:
-```
-$CONTENT
-```
-EOF
-
-            if [ -n "$EXISTING_TEST" ]; then
-              cat >> prompt.txt <<EOF
-
-EXISTING TEST FILE (currently has gaps in coverage):
-```
-$EXISTING_TEST
-```
-
-EXPAND the existing tests to cover ALL untested code paths. Add new test cases to reach 90% coverage.
-EOF
-            else
-              cat >> prompt.txt <<'EOF'
-
-CREATE a comprehensive test file covering all exported functionality.
-EOF
-            fi
-
-            cat >> prompt.txt <<'EOF'
-
-ANALYSIS REQUIRED:
-1. Identify all testable code paths in the source
-2. Count total paths vs currently tested paths
-3. Generate tests for untested paths
-4. Ensure 90%+ coverage
-
-OUTPUT: Provide ONLY the complete test file code (no explanations, no markdown code fences, just raw code).
-EOF
+            # Escape for JSON
+            PROMPT_ESCAPED=$(echo "$PROMPT" | python3 -c "import sys, json; print(json.dumps(sys.stdin.read()))")
             
-            # Call GitHub Models API (using GPT-4)
+            # Call API
             RESPONSE=$(curl -s -X POST "https://models.inference.ai.azure.com/chat/completions" \
               -H "Content-Type: application/json" \
               -H "Authorization: Bearer $GITHUB_TOKEN" \
-              -d @- << REQUEST
-{
-  "messages": [
-    {
-      "role": "system",
-      "content": "You are an expert software testing engineer. Generate complete, working unit test files."
-    },
-    {
-      "role": "user", 
-      "content": "$(cat prompt.txt | jq -Rs .)"
-    }
-  ],
-  "model": "gpt-4o",
-  "temperature": 0.3,
-  "max_tokens": 4000
-}
-REQUEST
-            )
+              -d "{\"messages\":[{\"role\":\"system\",\"content\":\"Expert test engineer. Generate complete test files.\"},{\"role\":\"user\",\"content\":$PROMPT_ESCAPED}],\"model\":\"gpt-4o\",\"temperature\":0.3,\"max_tokens\":4000}")
             
-            # Extract generated code
+            # Extract code
             TEST_CODE=$(echo "$RESPONSE" | jq -r '.choices[0].message.content' | sed 's/^```[a-z]*//;s/```$//')
             
             # Save generated test
@@ -200,7 +148,7 @@ REQUEST
         continue-on-error: true
         run: |
           if [ -f "StageReady.Api.Tests/StageReady.Api.Tests.csproj" ]; then
-            dotnet test --logger "console;verbosity=minimal" || echo "Tests failed - will be fixed in review"
+            dotnet test --collect:"XPlat Code Coverage" --settings coverlet.runsettings --logger "console;verbosity=minimal" || echo "Tests failed - will be fixed in review"
           fi
 
       - name: Run generated mobile tests  
@@ -209,7 +157,7 @@ REQUEST
         continue-on-error: true
         run: |
           if [ -f "package.json" ]; then
-            npm test --passWithNoTests || echo "Tests failed - will be fixed in review"
+            npm test -- --coverage --passWithNoTests || echo "Tests failed - will be fixed in review"
           fi
 
       - name: Commit generated tests
