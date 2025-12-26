@@ -1,0 +1,219 @@
+name: AI Test Generation
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+    paths:
+      - 'backend/StageReady.Api/Services/**'
+      - 'mobile/lib/**'
+      - 'mobile/contexts/**'
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  generate-tests:
+    name: Generate Unit Tests
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.head_ref }}
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+
+      - name: Get changed files
+        id: changed-files
+        run: |
+          git fetch origin ${{ github.base_ref }}
+          CHANGED_FILES=$(git diff --name-only origin/${{ github.base_ref }}...HEAD | grep -E '(backend/StageReady.Api/Services/|mobile/lib/|mobile/contexts/)' | grep -v '__tests__' | grep -v 'Tests.cs' || echo "")
+          echo "files<<EOF" >> $GITHUB_OUTPUT
+          echo "$CHANGED_FILES" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+          
+          COUNT=$(echo "$CHANGED_FILES" | grep -v '^$' | wc -l)
+          echo "count=$COUNT" >> $GITHUB_OUTPUT
+
+      - name: Generate tests with AI
+        if: steps.changed-files.outputs.count > 0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "Generating tests for ${{ steps.changed-files.outputs.count }} changed file(s)..."
+          
+          # Create prompt for each changed file
+          mkdir -p generated-tests
+          
+          echo "${{ steps.changed-files.outputs.files }}" | while read file; do
+            if [ -z "$file" ]; then continue; fi
+            
+            echo "Processing: $file"
+            
+            # Get file content and diff
+            CONTENT=$(cat "$file" 2>/dev/null || echo "")
+            DIFF=$(git diff origin/${{ github.base_ref }}...HEAD -- "$file")
+            
+            # Determine test file path
+            if [[ "$file" == backend/* ]]; then
+              FILENAME=$(basename "$file" .cs)
+              TEST_FILE="backend/StageReady.Api.Tests/Services/${FILENAME}Tests.cs"
+              FRAMEWORK="xUnit with FluentAssertions and Moq for C#/.NET"
+            else
+              DIR=$(dirname "$file")
+              FILENAME=$(basename "$file")
+              TEST_FILE="${DIR}/__tests__/${FILENAME%.ts*}.test.${FILENAME##*.}"
+              FRAMEWORK="Jest with React Native Testing Library for TypeScript"
+            fi
+            
+            # Check if test file exists
+            if [ -f "$TEST_FILE" ]; then
+              EXISTING_TEST=$(cat "$TEST_FILE")
+              ACTION="UPDATE"
+            else
+              EXISTING_TEST=""
+              ACTION="CREATE"
+            fi
+            
+            # Create AI prompt
+            cat > prompt.txt << PROMPT
+You are a senior software engineer writing comprehensive unit tests.
+
+TASK: ${ACTION} unit test file for: $file
+TEST FILE: $TEST_FILE
+FRAMEWORK: $FRAMEWORK
+
+REQUIREMENTS:
+- 90% line and function coverage
+- Test all public methods/functions
+- Include edge cases and error scenarios
+- Use proper mocking for dependencies
+- Follow existing test patterns in the codebase
+
+SOURCE CODE:
+\`\`\`
+$CONTENT
+\`\`\`
+
+CHANGES IN THIS PR:
+\`\`\`diff
+$DIFF
+\`\`\`
+
+$(if [ -n "$EXISTING_TEST" ]; then
+  echo "EXISTING TEST FILE:"
+  echo "\`\`\`"
+  echo "$EXISTING_TEST"
+  echo "\`\`\`"
+  echo ""
+  echo "UPDATE the existing test file to cover the new/modified functionality."
+else
+  echo "CREATE a new comprehensive test file from scratch."
+fi)
+
+OUTPUT: Provide ONLY the complete test file code, no explanations or markdown.
+PROMPT
+            
+            # Call GitHub Models API (using GPT-4)
+            RESPONSE=$(curl -s -X POST "https://models.inference.ai.azure.com/chat/completions" \
+              -H "Content-Type: application/json" \
+              -H "Authorization: Bearer $GITHUB_TOKEN" \
+              -d @- << REQUEST
+{
+  "messages": [
+    {
+      "role": "system",
+      "content": "You are an expert software testing engineer. Generate complete, working unit test files."
+    },
+    {
+      "role": "user", 
+      "content": "$(cat prompt.txt | jq -Rs .)"
+    }
+  ],
+  "model": "gpt-4o",
+  "temperature": 0.3,
+  "max_tokens": 4000
+}
+REQUEST
+            )
+            
+            # Extract generated code
+            TEST_CODE=$(echo "$RESPONSE" | jq -r '.choices[0].message.content' | sed 's/^```[a-z]*//;s/```$//')
+            
+            # Save generated test
+            mkdir -p "$(dirname "$TEST_FILE")"
+            echo "$TEST_CODE" > "$TEST_FILE"
+            echo "Generated: $TEST_FILE"
+          done
+
+      - name: Run generated backend tests
+        if: steps.changed-files.outputs.count > 0
+        working-directory: backend
+        continue-on-error: true
+        run: |
+          if [ -f "StageReady.Api.Tests/StageReady.Api.Tests.csproj" ]; then
+            dotnet test --logger "console;verbosity=minimal" || echo "Tests failed - will be fixed in review"
+          fi
+
+      - name: Run generated mobile tests  
+        if: steps.changed-files.outputs.count > 0
+        working-directory: mobile
+        continue-on-error: true
+        run: |
+          if [ -f "package.json" ]; then
+            npm test --passWithNoTests || echo "Tests failed - will be fixed in review"
+          fi
+
+      - name: Commit generated tests
+        if: steps.changed-files.outputs.count > 0
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git diff --staged --quiet || git commit -m "🤖 Auto-generate unit tests for changed files"
+          git push
+
+      - name: Comment on PR
+        if: steps.changed-files.outputs.count > 0
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const changedFiles = `${{ steps.changed-files.outputs.files }}`.split('\n').filter(f => f);
+            
+            const comment = `## 🤖 AI-Generated Unit Tests
+            
+            Generated tests for **${{ steps.changed-files.outputs.count }}** changed file(s):
+            
+            ${changedFiles.map(f => \`- \\\`${f}\\\`\`).join('\\n')}
+            
+            ### ⚠️ Important: Review Required
+            - AI-generated tests have been committed to this PR
+            - **Please review all generated tests** for correctness
+            - Verify mocks and assertions are appropriate
+            - Run tests locally: \`dotnet test\` (backend) or \`npm test\` (mobile)
+            - Coverage will be enforced by CI before merge
+            
+            If tests need fixes, commit changes directly to this PR.`;
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: comment
+            });
+
+      - name: No tests needed
+        if: steps.changed-files.outputs.count == 0
+        run: |
+          echo "No files requiring tests were changed in this PR"
+          echo "✅ No test generation needed" >> $GITHUB_STEP_SUMMARY

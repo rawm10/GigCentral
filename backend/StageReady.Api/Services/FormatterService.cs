@@ -456,4 +456,20 @@ Output ONLY the formatted ChordPro text, nothing else.";
         
         return noteToNumber.TryGetValue(note, out var number) ? number + suffix : chord;
     }
+
+    // Simple utility method to test AI generation
+    public string GetChordRoot(string chord)
+    {
+        if (string.IsNullOrWhiteSpace(chord))
+            return string.Empty;
+            
+        // Remove brackets if present
+        chord = chord.Trim('[', ']');
+        
+        // Extract root note (first 1-2 characters)
+        if (chord.Length >= 2 && (chord[1] == '#' || chord[1] == 'b'))
+            return chord.Substring(0, 2);
+        
+        return chord.Length > 0 ? chord.Substring(0, 1) : string.Empty;
+    }
 }

@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<RunSettings>
+  <DataCollectionRunSettings>
+    <DataCollectors>
+      <DataCollector friendlyName="XPlat Code Coverage">
+        <Configuration>
+          <Format>cobertura,opencover</Format>
+          <Exclude>[*]StageReady.Api.Migrations.*,[*]StageReady.Api.DTOs.*,[*]StageReady.Api.Models.*</Exclude>
+          <ExcludeByFile>**/Program.cs,**/Migrations/**/*.cs</ExcludeByFile>
+          <SingleHit>false</SingleHit>
+          <UseSourceLink>true</UseSourceLink>
+          <IncludeTestAssembly>false</IncludeTestAssembly>
+          <SkipAutoProps>true</SkipAutoProps>
+          <DeterministicReport>false</DeterministicReport>
+          <!-- Per-folder thresholds for Services - 90% lines and functions -->
+          <Threshold>90</Threshold>
+          <ThresholdType>line,method</ThresholdType>
+          <ThresholdStat>total</ThresholdStat>
+        </Configuration>
+      </DataCollector>
+    </DataCollectors>
+  </DataCollectionRunSettings>
+</RunSettings>

@@ -53,6 +53,12 @@ api.interceptors.response.use(
   }
 );
 
+// Helper function for getting auth headers (exported for testing)
+export const getAuthHeaders = async () => {
+  const token = await SecureStore.getItemAsync('accessToken');
+  return token ? { Authorization: `Bearer ${token}` } : {};
+};
+
 export default api;
 
 // Type definitions
