@@ -180,7 +180,7 @@ jobs:
             
             Generated/expanded tests for **${{ steps.coverage-gaps.outputs.count }}** file(s) to reach 90% coverage target:
             
-            ${allFiles.map(f => \`- \\\`${f}\\\`\`).join('\\n')}
+            ${allFiles.map(f => '- `' + f + '`').join('\n')}
             
             ### ⚠️ Important: Review Required
             - AI analyzed coverage gaps and generated tests for untested code paths
