@@ -110,10 +110,7 @@ jobs:
             fi
             
             # Build prompt in temp file
-            cat > /tmp/prompt.txt << 'PROMPTEND'
-            You are a test engineer. Generate comprehensive unit tests to achieve 90% coverage.
-            PROMPTEND
-                        
+            echo "You are a test engineer. Generate comprehensive unit tests to achieve 90% coverage." > /tmp/prompt.txt
             echo "" >> /tmp/prompt.txt
             echo "FRAMEWORK: ${FRAMEWORK}" >> /tmp/prompt.txt
             echo "ACTION: ${ACTION}" >> /tmp/prompt.txt
