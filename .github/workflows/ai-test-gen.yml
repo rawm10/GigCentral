@@ -133,8 +133,22 @@ jobs:
             # Call API
             RESPONSE=$(curl -s -X POST "https://models.inference.ai.azure.com/chat/completions" -H "Content-Type: application/json" -H "Authorization: Bearer $GITHUB_TOKEN" -d "{\"messages\":[{\"role\":\"system\",\"content\":\"Expert test engineer.\"},{\"role\":\"user\",\"content\":$PROMPT_JSON}],\"model\":\"gpt-4o\",\"temperature\":0.3,\"max_tokens\":4000}")
             
+            # Debug: Show response
+            echo "API Response for $file:"
+            echo "$RESPONSE" | jq '.' || echo "Failed to parse JSON response"
+            
+            # Check for API errors
+            if echo "$RESPONSE" | jq -e '.error' > /dev/null 2>&1; then
+              echo "❌ API Error:"
+              echo "$RESPONSE" | jq '.error'
+              continue
+            fi
+            
             # Extract code and clean it
-            TEST_CODE=$(echo "$RESPONSE" | jq -r '.choices[0].message.content')
+            TEST_CODE=$(echo "$RESPONSE" | jq -r '.choices[0].message.content // empty')
+            
+            # Debug: Show extracted code length
+            echo "Extracted code length: ${#TEST_CODE} characters"
             
             # Remove markdown code fences if present
             TEST_CODE=$(echo "$TEST_CODE" | sed -n '/^```/,/^```/!p' | sed '1{/^```/d}' | sed '$d')
