@@ -1,9 +1,9 @@
 # StageReady
 
-StageReady is a cross-platform mobile application (iOS/Android) for musicians to organize chord sheets, build gig-ready setlists, perform without manual scrolling, **and discover gigs**. 
+StageReady is a cross-platform mobile application (iOS/Android) for musicians to organize chord sheets, build gig-ready setlists, perform without manual scrolling, **discover gigs, and manage bookings with venues**. 
 
 **Phase 1 (Core Features)**: Chord sheet management and setlist organization  
-**Phase 2 (Gig Marketplace)**: Connect musicians with venues and event organizers
+**Phase 2 (Gig Marketplace)**: Connect musicians with venues, manage conversations, and coordinate performance dates
 
 ## Features
 
@@ -21,9 +21,13 @@ StageReady is a cross-platform mobile application (iOS/Android) for musicians to
 - **Smart Matching**: AI-powered recommendations based on your setlists and preferences
 - **One-Tap Applications**: Apply to gigs using your existing setlists as portfolios
 - **Venue Tools**: Post gigs, review applicants, manage bookings
-- **Booking Management**: Track applications, confirmed gigs, and performance history
+- **Conversation Management**: Thread-based messaging between venues and musicians with read receipts and notifications
+- **Date & Calendar Management**: Coordinate performance dates, manage availability, schedule rehearsals, and sync with calendar apps
+- **Booking Management**: Track applications, confirmed gigs, performance history, and contract status
+- **Availability Calendar**: Musicians set available dates; venues view musician availability before booking
+- **Automated Reminders**: Notifications for upcoming gigs, pending responses, and contract deadlines
 - **Ratings & Reviews**: Build reputation through verified performance reviews
-- **In-App Messaging**: Communicate directly with venues or musicians
+- **Multi-Party Coordination**: Group conversations for bands, venues, and event coordinators
 
 ## Architecture
 
@@ -267,6 +271,3 @@ See [LICENSE](LICENSE) file for details.
 
 For issues and questions, please create an issue in the repository.
 
----
-
-**ChordKeeper** - Never miss a chord change again! 🎸
