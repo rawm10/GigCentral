@@ -75,7 +75,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          echo "Generating tests for ${{ steps.coverage-gaps.outputs.count }} file(s) to reach 90% coverage..."
+          echo "🤖 Generating tests for ${{ steps.coverage-gaps.outputs.count }} file(s) to reach 90% coverage..."
           
           # Create prompt for each file needing coverage
           mkdir -p generated-tests
