@@ -34,8 +34,18 @@ public static class ProviderEndpoints
 
     private static Guid GetUserId(HttpContext context)
     {
-        var userIdClaim = context.User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
-        return Guid.Parse(userIdClaim ?? throw new UnauthorizedAccessException());
+        // Try multiple claim types for compatibility
+        var userIdClaim = context.User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value
+            ?? context.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value
+            ?? context.User.FindFirst("uid")?.Value
+            ?? context.User.FindFirst("user_id")?.Value;
+            
+        if (string.IsNullOrEmpty(userIdClaim))
+        {
+            throw new UnauthorizedAccessException("User ID claim not found");
+        }
+        
+        return Guid.Parse(userIdClaim);
     }
 }
 
@@ -95,8 +105,18 @@ public static class DirectoryEndpoints
 
     private static Guid GetUserId(HttpContext context)
     {
-        var userIdClaim = context.User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
-        return Guid.Parse(userIdClaim ?? throw new UnauthorizedAccessException());
+        // Try multiple claim types for compatibility
+        var userIdClaim = context.User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value
+            ?? context.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value
+            ?? context.User.FindFirst("uid")?.Value
+            ?? context.User.FindFirst("user_id")?.Value;
+            
+        if (string.IsNullOrEmpty(userIdClaim))
+        {
+            throw new UnauthorizedAccessException("User ID claim not found");
+        }
+        
+        return Guid.Parse(userIdClaim);
     }
 }
 
@@ -146,8 +166,18 @@ public static class SetlistEndpoints
 
     private static Guid GetUserId(HttpContext context)
     {
-        var userIdClaim = context.User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
-        return Guid.Parse(userIdClaim ?? throw new UnauthorizedAccessException());
+        // Try multiple claim types for compatibility
+        var userIdClaim = context.User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value
+            ?? context.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value
+            ?? context.User.FindFirst("uid")?.Value
+            ?? context.User.FindFirst("user_id")?.Value;
+            
+        if (string.IsNullOrEmpty(userIdClaim))
+        {
+            throw new UnauthorizedAccessException("User ID claim not found");
+        }
+        
+        return Guid.Parse(userIdClaim);
     }
 }
 
@@ -179,7 +209,17 @@ public static class PreferencesEndpoints
 
     private static Guid GetUserId(HttpContext context)
     {
-        var userIdClaim = context.User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
-        return Guid.Parse(userIdClaim ?? throw new UnauthorizedAccessException());
+        // Try multiple claim types for compatibility
+        var userIdClaim = context.User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value
+            ?? context.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value
+            ?? context.User.FindFirst("uid")?.Value
+            ?? context.User.FindFirst("user_id")?.Value;
+            
+        if (string.IsNullOrEmpty(userIdClaim))
+        {
+            throw new UnauthorizedAccessException("User ID claim not found");
+        }
+        
+        return Guid.Parse(userIdClaim);
     }
 }
