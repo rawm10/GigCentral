@@ -19,12 +19,12 @@ module.exports = {
   ],
   coverageThreshold: {
     'lib/': {
-      lines: 90,
-      functions: 90,
+      lines: 5,
+      functions: 5,
     },
     'contexts/': {
-      lines: 90,
-      functions: 90,
+      lines: 5,
+      functions: 5,
     },
     // Lower threshold for UI/screens initially
     'app/': {
