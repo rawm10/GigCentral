@@ -16,6 +16,8 @@
 *.sln.docstates
 appsettings.Development.json
 appsettings.Local.json
+**/TestResults/
+coverage.*.xml
 
 # Mobile
 node_modules/
@@ -30,6 +32,7 @@ npm-debug.*
 *.orig.*
 web-build/
 dist/
+coverage/
 
 # IDE
 .idea/
