@@ -1,11 +1,14 @@
 
 openapi: 3.0.3
 info:
-  title: ChordKeeper API
+  title: StageReady API
   version: 1.0.0
-  description: Backend-for-Frontend API for ChordKeeper mobile app.
+  description: Backend API for StageReady mobile app - organize chord sheets, build setlists, and prepare for gigs.
 servers:
-  - url: https://api.chordkeeper.app/api/v1
+  - url: http://localhost:5000/api/v1
+    description: Local development
+  - url: https://api.stageready.app/api/v1
+    description: Production
 paths:
   /auth/signup:
     post:
@@ -53,6 +56,8 @@ paths:
   /auth/refresh:
     post:
       summary: Refresh token
+      security:
+        - bearerAuth: []
       responses:
         '200':
           description: OK
@@ -64,6 +69,8 @@ paths:
   /providers:
     get:
       summary: List provider PATs
+      security:
+        - bearerAuth: []
       responses:
         '200':
           description: OK
@@ -74,6 +81,8 @@ paths:
                 items: { $ref: '#/components/schemas/Provider' }
     post:
       summary: Add/update provider PAT
+      security:
+        - bearerAuth: []
       requestBody:
         required: true
         content:
@@ -90,16 +99,18 @@ paths:
   /sheets:
     get:
       summary: List sheets
+      security:
+        - bearerAuth: []
       parameters:
         - in: query
           name: directoryId
           schema: { type: string, format: uuid }
         - in: query
           name: page
-          schema: { type: integer, minimum: 1 }
+          schema: { type: integer, minimum: 1, default: 1 }
         - in: query
           name: pageSize
-          schema: { type: integer, minimum: 1, maximum: 100 }
+          schema: { type: integer, minimum: 1, maximum: 100, default: 20 }
       responses:
         '200':
           description: OK
@@ -110,6 +121,8 @@ paths:
                 items: { $ref: '#/components/schemas/SheetSummary' }
     post:
       summary: Create sheet
+      security:
+        - bearerAuth: []
       requestBody:
         required: true
         content:
@@ -126,21 +139,14 @@ paths:
   /sheets/import:
     post:
       summary: Import sheet from text/file/provider
+      security:
+        - bearerAuth: []
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              type: object
-              properties:
-                sourceType:
-                  type: string
-                  enum: [text, file, provider]
-                body: { type: string }
-                providerName: { type: string }
-                providerSongId: { type: string }
-                patId: { type: string, format: uuid }
-              required: [sourceType]
+              $ref: '#/components/schemas/ImportSheetRequest'
       responses:
         '201':
           description: Imported
@@ -149,9 +155,32 @@ paths:
               schema:
                 $ref: '#/components/schemas/Sheet'
         '422': { $ref: '#/components/responses/Unprocessable' }
+  /sheets/preview-format:
+    post:
+      summary: Preview ChordPro formatting without saving
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PreviewFormatRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  formattedBody: { type: string }
+        '400': { $ref: '#/components/responses/BadRequest' }
   /sheets/{id}:
     get:
-      summary: Get sheet
+      summary: Get sheet by ID
+      security:
+        - bearerAuth: []
       parameters:
         - in: path
           name: id
@@ -164,8 +193,11 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Sheet'
+        '404': { description: Not Found }
     put:
       summary: Update sheet
+      security:
+        - bearerAuth: []
       parameters:
         - in: path
           name: id
@@ -184,18 +216,15 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Sheet'
+        '404': { description: Not Found }
     delete:
       summary: Delete sheet
+      security:
+        - bearerAuth: []
       parameters:
         - in: path
-          name: id
-          required: true
-          schema: { type: string, format: uuid }
-      responses:
-        '204': { description: No Content }
-  /sheets/{id}/format:
-    post:
-      summary: Format sheet for viewport
+      security:
+        - bearerAuth: []
       parameters:
         - in: path
           name: id
@@ -206,26 +235,15 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              properties:
-                strategy: { type: string, enum: [auto, rules] }
-                viewport:
-                  type: object
-                  properties:
-                    width: { type: integer }
-                    height: { type: integer }
-                    dpi: { type: integer }
-                options:
-                  type: object
-                  properties:
-                    fontScale: { type: number }
-                    avoidScroll: { type: boolean }
+              $ref: '#/components/schemas/FormatSheetRequest'
       responses:
         '200':
           description: OK
           content:
             application/json:
               schema:
+                $ref: '#/components/schemas/FormatSheetResponse'
+        '404': { description: Not Found
                 type: object
                 properties:
                   formattedBody: { type: string }
@@ -253,14 +271,16 @@ paths:
                 useNashville: { type: boolean }
       responses:
         '200':
-          description: OK
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Sheet'
-  /directories:
-    get:
-      summary: List directories
+          description: OKsheet by semitones or convert to Nashville Numbers
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { all directories for current user
+      security:
+        - bearerAuth: []
       responses:
         '200':
           description: OK
@@ -271,6 +291,8 @@ paths:
                 items: { $ref: '#/components/schemas/Directory' }
     post:
       summary: Create directory
+      security:
+        - bearerAuth: []
       requestBody:
         required: true
         content:
@@ -285,8 +307,27 @@ paths:
               schema:
                 $ref: '#/components/schemas/Directory'
   /directories/{id}:
+    get:
+      summary: Get directory by ID
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Directory'
+        '404': { description: Not Found }
     put:
       summary: Update directory
+      security:
+        - bearerAuth: []
       parameters:
         - in: path
           name: id
@@ -305,8 +346,11 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Directory'
+        '404': { description: Not Found }
     delete:
       summary: Delete directory
+      security:
+        - bearerAuth: []
       parameters:
         - in: path
           name: id
@@ -336,32 +380,8 @@ paths:
                 $ref: '#/components/schemas/Setlist'
   /setlists/{id}/items:
     post:
-      summary: Add item to setlist
-      parameters:
-        - in: path
-          name: id
-          required: true
-          schema: { type: string, format: uuid }
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                sheetId: { type: string, format: uuid }
-                position: { type: integer }
-              required: [sheetId]
-      responses:
-        '201':
-          description: Created
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/SetlistItem'
-  /preferences:
-    get:
-      summary: Get user preferences
+      security:
+        - bearerAuth: []
       responses:
         '200':
           description: OK
@@ -369,19 +389,24 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Preferences'
+        '404': { description: Not Found }
     put:
       summary: Update preferences
+      security:
+        - bearerAuth: []
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Preferences'
+              $ref: '#/components/schemas/PreferencesInput'
       responses:
         '200':
           description: OK
           content:
             application/json:
+              schema:
+                $ref: '#/components/schemas/Preferences'
               schema:
                 $ref: '#/components/schemas/Preferences'
   /exports/pdf:
@@ -403,105 +428,207 @@ paths:
         '202':
           description: Accepted (export job queued)
           content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  jobId: { type: string }
-
-components:
+   ecuritySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
   schemas:
     AuthResponse:
       type: object
       properties:
-        accessToken: { type: string }
-        refreshToken: { type: string }
+        accessToken: { type: string, description: JWT access token }
+        refreshToken: { type: string, description: JWT refresh token }
         user:
           type: object
           properties:
-            id: { type: string }
-            email: { type: string }
+            id: { type: string, format: uuid }
+            email: { type: string, format: email }
             displayName: { type: string }
     Provider:
       type: object
       properties:
-        id: { type: string }
-        name: { type: string }
+        id: { type: string, format: uuid }
+        name: { type: string, description: Provider name (e.g. ultimate-guitar, chordify) }
         createdAt: { type: string, format: date-time }
     ProviderInput:
       type: object
       properties:
         name: { type: string, example: 'ultimate-guitar' }
-        pat: { type: string }
+        pat: { type: string, description: Personal Access Token (encrypted on server) }
       required: [name, pat]
     SheetSummary:
       type: object
       properties:
-        id: { type: string }
+        id: { type: string, format: uuid }
         title: { type: string }
-        artist: { type: string }
-        key: { type: string }
+        artist: { type: string, nullable: true }
+        key: { type: string, nullable: true }
         updatedAt: { type: string, format: date-time }
     Sheet:
       type: object
       properties:
-        id: { type: string }
+        id: { type: string, format: uuid }
         title: { type: string }
-        artist: { type: string }
-        key: { type: string }
-        capo: { type: integer }
-        format: { type: string, enum: ['chordpro','plain'] }
-        body: { type: string }
-        source: { type: string }
+        artist: { type: string, nullable: true }
+        key: { type: string, nullable: true }
+        capo: { type: integer, nullable: true }
+        format: { type: string, enum: ['chordpro','plain'], default: 'chordpro' }
+        body: { type: string, description: ChordPro or plain text content }
+        source: { type: string, nullable: true, description: Import source (url, provider, manual) }
         createdAt: { type: string, format: date-time }
         updatedAt: { type: string, format: date-time }
     SheetInput:
       type: object
       properties:
         title: { type: string }
-        artist: { type: string }
-        key: { type: string }
-        capo: { type: integer }
-        format: { type: string, enum: ['chordpro','plain'] }
+        artist: { type: string, nullable: true }
+        key: { type: string, nullable: true }
+        capo: { type: integer, nullable: true }
+        format: { type: string, enum: ['chordpro','plain'], nullable: true }
         body: { type: string }
-        source: { type: string }
+        source: { type: string, nullable: true }
       required: [title, body]
+    ImportSheetRequest:
+      type: object
+      properties:
+        sourceType: { type: string, enum: [text, file, provider] }
+        body: { type: string, nullable: true }
+        providerName: { type: string, nullable: true }
+        providerSongId: { type: string, nullable: true }
+        patId: { type: string, format: uuid, nullable: true }
+      required: [sourceType]
+    PreviewFormatRequest:
+      type: object
+      properties:
+        body: { type: string }
+        chordsOnly: { type: boolean, default: false }
+        customInstructions: { type: string, nullable: true }
+      required: [body]
+    FormatSheetRequest:
+      type: object
+      properties:
+        strategy: { type: string, enum: [auto, rules], nullable: true }
+        viewport:
+          type: object
+          nullable: true
+          properties:
+            width: { type: integer }
+            height: { type: integer }
+            dpi: { type: integer }
+        options:
+          type: object
+          nullable: true
+          properties:
+            fontScale: { type: number }
+            avoidScroll: { type: boolean }
+    FormatSheetResponse:
+      type: object
+      properties:
+        formattedBody: { type: string }
+        metrics:
+          type: object
+          properties:
+            lines: { type: integer }
+            estimatedPageCount: { type: integer }
+    TransposeRequest:
+      type: object
+      properties:
+        semitones: { type: integer, nullable: true, description: Number of semitones to transpose (positive or negative) }
+        useNashville: { type: boolean, nullable: true, description: Convert to Nashville Numbers }
     Directory:
       type: object
       properties:
-        id: { type: string }
+        id: { type: string, format: uuid }
         name: { type: string }
-        description: { type: string }
+        description: { type: string, nullable: true }
         sortOrder: { type: integer }
     DirectoryInput:
       type: object
       properties:
         name: { type: string }
-        description: { type: string }
-        sortOrder: { type: integer }
+        description: { type: string, nullable: true }
+        sortOrder: { type: integer, nullable: true }
       required: [name]
     Setlist:
       type: object
       properties:
-        id: { type: string }
-        directoryId: { type: string }
+        id: { type: string, format: uuid }
+        directoryId: { type: string, format: uuid }
         name: { type: string }
+        items: 
+          type: array
+          nullable: true
+          items: { $ref: '#/components/schemas/SetlistItem' }
         createdAt: { type: string, format: date-time }
+    CreateSetlistRequest:
+      type: object
+      properties:
+        directoryId: { type: string, format: uuid }
+        name: { type: string }
+      required: [directoryId, name]
     SetlistItem:
       type: object
       properties:
-        id: { type: string }
-        setlistId: { type: string }
-        sheetId: { type: string }
+        id: { type: string, format: uuid }
+        sheetId: { type: string, format: uuid }
         position: { type: integer }
+        title: { type: string, nullable: true, description: Sheet title for display }
+        artist: { type: string, nullable: true, description: Sheet artist for display }
+        key: { type: string, nullable: true, description: Sheet key for display }
+    AddSetlistItemRequest:
+      type: object
+      properties:
+        sheetId: { type: string, format: uuid }
+        position: { type: integer, nullable: true, description: Position in setlist (auto-assigned if omitted) }
+      required: [sheetId]
+    ReorderItemsRequest:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            type: object
+            properties:
+              id: { type: string, format: uuid }
+              position: { type: integer }
+            required: [id, position]
+      required: [items]
     Preferences:
       type: object
       properties:
-        fontScale: { type: number }
-        theme: { type: string, enum: ['light','dark','high-contrast'] }
-        autoScroll: { type: boolean }
-        scrollBpm: { type: integer }
-        highContrast: { type: boolean }
+        fontScale: { type: number, default: 1.0 }
+        theme: { type: string, enum: ['light','dark','system'], default: 'system' }
+        autoScroll: { type: boolean, default: false }
+        scrollBpm: { type: integer, nullable: true }
+        highContrast: { type: boolean, default: false }
+    PreferencesInput:
+      type: object
+      properties:
+        fontScale: { type: number, nullable: true }
+        theme: { type: string, enum: ['light','dark','system'], nullable: true }
+        autoScroll: { type: boolean, nullable: true }
+        scrollBpm: { type: integer, nullable: true }
+        highContrast: { type: boolean, nullable: true }
+  responses:
+    BadRequest:
+      description: Bad Request
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error: { type: string }
+    Unauthorized:
+      description: Unauthorized - Invalid or missing authentication token
+    Unprocessable:
+      description: Unprocessable Entity - Request is well-formed but contains semantic errors
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error: { type: string }
   responses:
     BadRequest:
       description: Bad Request
