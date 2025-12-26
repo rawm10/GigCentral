@@ -1,6 +1,42 @@
 import api, { AuthResponse } from './api';
 import * as SecureStore from 'expo-secure-store';
 
+// Helper to handle storage - SecureStore works on mobile only
+const storage = {
+  async setItem(key: string, value: string) {
+    try {
+      await SecureStore.setItemAsync(key, value);
+    } catch (error) {
+      // Fallback to in-memory for web or if SecureStore fails
+      console.warn('SecureStore failed, using localStorage fallback', error);
+      if (typeof localStorage !== 'undefined') {
+        localStorage.setItem(key, value);
+      }
+    }
+  },
+  async getItem(key: string): Promise<string | null> {
+    try {
+      return await SecureStore.getItemAsync(key);
+    } catch (error) {
+      // Fallback to in-memory for web or if SecureStore fails
+      if (typeof localStorage !== 'undefined') {
+        return localStorage.getItem(key);
+      }
+      return null;
+    }
+  },
+  async deleteItem(key: string) {
+    try {
+      await SecureStore.deleteItemAsync(key);
+    } catch (error) {
+      // Fallback to in-memory for web or if SecureStore fails
+      if (typeof localStorage !== 'undefined') {
+        localStorage.removeItem(key);
+      }
+    }
+  },
+};
+
 export const authService = {
   async signup(email: string, password: string, displayName?: string): Promise<AuthResponse> {
     const response = await api.post<AuthResponse>('/auth/signup', {
@@ -9,8 +45,8 @@ export const authService = {
       displayName,
     });
     
-    await SecureStore.setItemAsync('accessToken', response.data.accessToken);
-    await SecureStore.setItemAsync('refreshToken', response.data.refreshToken);
+    await storage.setItem('accessToken', response.data.accessToken);
+    await storage.setItem('refreshToken', response.data.refreshToken);
     
     return response.data;
   },
@@ -21,19 +57,19 @@ export const authService = {
       password,
     });
     
-    await SecureStore.setItemAsync('accessToken', response.data.accessToken);
-    await SecureStore.setItemAsync('refreshToken', response.data.refreshToken);
+    await storage.setItem('accessToken', response.data.accessToken);
+    await storage.setItem('refreshToken', response.data.refreshToken);
     
     return response.data;
   },
 
   async logout(): Promise<void> {
-    await SecureStore.deleteItemAsync('accessToken');
-    await SecureStore.deleteItemAsync('refreshToken');
+    await storage.deleteItem('accessToken');
+    await storage.deleteItem('refreshToken');
   },
 
   async isAuthenticated(): Promise<boolean> {
-    const token = await SecureStore.getItemAsync('accessToken');
+    const token = await storage.getItem('accessToken');
     return !!token;
   },
 };

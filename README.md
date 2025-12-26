@@ -48,37 +48,39 @@ StageReady is a cross-platform mobile application (iOS/Android) for musicians to
 
 ## Getting Started
 
-### Prerequisites
+See [SETUP.md](SETUP.md) for complete setup instructions.
 
-- **Backend**:
-  - .NET 8 SDK
-  - PostgreSQL 14+
-  - Optional: Azure account for cloud services
+### Quick Start
 
-- **Mobile**:
-  - Node.js 18+
-  - Expo CLI
-  - iOS Simulator (Mac) or Android Emulator
+#### Prerequisites
+- .NET 8 SDK
+- PostgreSQL 14+
+- Node.js 18+
+- Expo Go app on your phone
 
-### Backend Setup
+#### Backend Setup
+```powershell
+cd backend/StageReady.Api
+dotnet user-secrets set "ConnectionStrings:DefaultConnection" "Host=localhost;Database=stageready;Username=postgres;Password=yourpassword"
+dotnet user-secrets set "JwtSettings:SecretKey" "YourSuperSecretKeyHereThatIsAtLeast32CharactersLong!"
+dotnet user-secrets set "JwtSettings:Issuer" "StageReady.Api"
+dotnet user-secrets set "JwtSettings:Audience" "StageReady.Client"
+dotnet ef database update
+$env:ASPNETCORE_ENVIRONMENT="Development"
+dotnet run
+```
 
-1. **Navigate to backend directory**:
+#### Mobile Setup
+1. **Add firewall rule** for port 5000 (see [SETUP.md](SETUP.md#first-time-setup-steps))
+2. **Configure mobile app**:
    ```powershell
-   cd backend/StageReady.Api
+   cd mobile
+   # Create .env file with your computer's IP address
+   echo "EXPO_PUBLIC_API_URL=http://YOUR_IP:5000/api/v1" > .env
+   npm install --legacy-peer-deps
+   npm start
    ```
-
-2. **Update connection string** in `appsettings.json`:
-   ```json
-   "ConnectionStrings": {
-     "DefaultConnection": "Host=localhost;Database=stageready;Username=postgres;Password=yourpassword"
-   }
-   ```
-
-3. **Create database migrations**:
-   ```powershell
-   dotnet ef migrations add InitialCreate
-   dotnet ef database update
-   ```
+3. **Scan QR code** with Expo Go app (ensure phone and PC on same WiFi)
 
 4. **Run the API**:
    ```powershell

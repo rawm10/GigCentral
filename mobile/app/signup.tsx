@@ -10,7 +10,7 @@ import {
   Platform,
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import { useAuth } from '../../contexts/AuthContext';
+import { useAuth } from '../contexts/AuthContext';
 
 export default function SignupScreen() {
   const [email, setEmail] = useState('');
@@ -33,10 +33,15 @@ export default function SignupScreen() {
 
     setIsLoading(true);
     try {
+      console.log('Attempting signup with:', email);
       await signup(email, password, displayName);
       router.replace('/(tabs)/library');
     } catch (error: any) {
-      Alert.alert('Signup Failed', error.response?.data?.error || 'Unable to create account');
+      console.error('Signup error:', error);
+      console.error('Error response:', error.response?.data);
+      console.error('Error message:', error.message);
+      const errorMsg = error.response?.data?.error || error.message || 'Unable to create account';
+      Alert.alert('Signup Failed', errorMsg);
     } finally {
       setIsLoading(false);
     }

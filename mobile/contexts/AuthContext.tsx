@@ -22,10 +22,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const checkAuth = async () => {
     try {
+      console.log('AuthContext: checkAuth starting...');
       const isAuth = await authService.isAuthenticated();
+      console.log('AuthContext: isAuthenticated =', isAuth);
       // In a real app, fetch user data here
       setIsLoading(false);
+      console.log('AuthContext: checkAuth complete');
     } catch (error) {
+      console.error('AuthContext: checkAuth error:', error);
       setIsLoading(false);
     }
   };

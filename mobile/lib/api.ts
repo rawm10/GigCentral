@@ -1,8 +1,7 @@
 import axios from 'axios';
 import * as SecureStore from 'expo-secure-store';
 
-const API_URL = 'https://api.chordkeeper.app/api/v1';
-// For development, use: const API_URL = 'http://localhost:5000/api/v1';
+const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:5000/api/v1';
 
 const api = axios.create({
   baseURL: API_URL,
