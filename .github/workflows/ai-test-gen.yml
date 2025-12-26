@@ -1,9 +1,9 @@
-name: AI Test Generation
+name: AI Test Generation (DISABLED)
 
 on:
-  pull_request:
-    types: [opened, synchronize]
-  workflow_dispatch:  # Allow manual trigger
+  workflow_dispatch:  # Manual trigger only - AI generation disabled due to quality issues
+  # pull_request:
+  #   types: [opened, synchronize]
 
 permissions:
   contents: write
